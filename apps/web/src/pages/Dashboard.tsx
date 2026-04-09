@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Bar,
   BarChart,
@@ -14,6 +15,7 @@ import {
 import api from '@/lib/api';
 import { brl } from '@/lib/format';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 type Summary = {
   balances: { pf: number; pj: number; consolidated: number };
@@ -61,6 +63,29 @@ export default function Dashboard() {
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-sm text-muted-foreground">Visão consolidada e projeções do período</p>
       </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Ações rápidas</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button asChild variant="default" className="touch-manipulation">
+            <Link to="/receitas">+ Nova receita</Link>
+          </Button>
+          <Button asChild variant="secondary" className="touch-manipulation">
+            <Link to="/despesas">+ Nova despesa</Link>
+          </Button>
+          <Button asChild variant="outline" className="touch-manipulation">
+            <Link to="/receitas?filter=proximos">Receitas a vencer (30 dias)</Link>
+          </Button>
+          <Button asChild variant="outline" className="touch-manipulation">
+            <Link to="/despesas?filter=proximos">Despesas a vencer (30 dias)</Link>
+          </Button>
+          <Button asChild variant="ghost" className="touch-manipulation">
+            <Link to="/estrutura">Estrutura / cadastros</Link>
+          </Button>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -158,7 +183,8 @@ export default function Dashboard() {
               <span>{brl(s.resultForecast.consolidated)}</span>
             </div>
             <p className="pt-2 text-xs text-muted-foreground">
-              Contratos ativos: {s.activeContracts.length} · Próximos vencimentos listados abaixo na API (resumo).
+              Contratos ativos: {s.activeContracts.length}. Use as ações rápidas acima para ver receitas e despesas com
+              vencimento nos próximos 30 dias.
             </p>
           </CardContent>
         </Card>

@@ -19,6 +19,7 @@ import CartaoLancamentos from '@/pages/CartaoLancamentos';
 import Relatorios from '@/pages/Relatorios';
 import Projecoes from '@/pages/Projecoes';
 import Cdb from '@/pages/Cdb';
+import Estrutura from '@/pages/Estrutura';
 
 function Protected({ children }: { children: ReactNode }) {
   const t = localStorage.getItem('lex_token');
@@ -39,6 +40,7 @@ export default function App() {
           }
         >
           <Route path="/" element={<Dashboard />} />
+          <Route path="/estrutura" element={<Estrutura />} />
           <Route path="/entidades" element={<Entidades />} />
           <Route path="/contas" element={<Contas />} />
           <Route path="/cartoes" element={<Cartoes />} />

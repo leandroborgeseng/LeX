@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '@/lib/api';
-import { brl, formatDateBr } from '@/lib/format';
+import { brl, formatDateBr, isDueWithinDaysFromToday, todayDateInputValue } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +24,9 @@ type Exp = {
 };
 
 export default function Despesas() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const listFilter = searchParams.get('filter');
+
   const [entities, setEntities] = useState<Entity[]>([]);
   const [cats, setCats] = useState<Cat[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -33,8 +37,8 @@ export default function Despesas() {
   const [financialEntityId, setFinancialEntityId] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [competence, setCompetence] = useState('');
-  const [due, setDue] = useState('');
+  const [competence, setCompetence] = useState(() => todayDateInputValue());
+  const [due, setDue] = useState(() => todayDateInputValue());
   const [type, setType] = useState<'RECORRENTE' | 'ESPORADICA'>('ESPORADICA');
   const [paymentMethod, setPaymentMethod] = useState('CONTA_BANCARIA');
   const [categoryId, setCategoryId] = useState('');
@@ -66,6 +70,14 @@ export default function Despesas() {
     load();
   }, []);
 
+  const displayRows = useMemo(() => {
+    if (listFilter !== 'proximos') return rows;
+    return rows.filter(
+      (r) =>
+        (r.status === 'PREVISTO' || r.status === 'ATRASADO') && isDueWithinDaysFromToday(r.dueDate, 30),
+    );
+  }, [rows, listFilter]);
+
   async function create(ev: React.FormEvent) {
     ev.preventDefault();
     const body: Record<string, unknown> = {
@@ -91,12 +103,25 @@ export default function Despesas() {
     await api.post('/expenses', body);
     setDescription('');
     setAmount('');
+    setCompetence(todayDateInputValue());
+    setDue(todayDateInputValue());
     await load();
   }
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Despesas</h1>
+      {listFilter === 'proximos' && (
+        <div className="flex flex-col gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            A mostrar apenas despesas <strong>previstas ou atrasadas</strong> com vencimento nos próximos{' '}
+            <strong>30 dias</strong>.
+          </span>
+          <Button type="button" variant="outline" size="sm" className="shrink-0 touch-manipulation" onClick={() => setSearchParams({})}>
+            Ver todas
+          </Button>
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Nova despesa</CardTitle>
@@ -251,24 +276,31 @@ export default function Despesas() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Últimas despesas</CardTitle>
+          <CardTitle className="text-base">
+            {listFilter === 'proximos' ? 'Despesas a vencer (filtro)' : 'Últimas despesas'}
+          </CardTitle>
         </CardHeader>
         <CardContent>
+          {listFilter === 'proximos' && displayRows.length === 0 && (
+            <p className="mb-3 text-sm text-muted-foreground">Nenhuma despesa corresponde a este filtro.</p>
+          )}
           <Table>
             <THead>
               <TR>
                 <TH>Descrição</TH>
                 <TH>Competência</TH>
+                <TH>Vencimento</TH>
                 <TH>Valor</TH>
                 <TH>Meio</TH>
                 <TH>Status</TH>
               </TR>
             </THead>
             <TBody>
-              {rows.slice(0, 40).map((r) => (
+              {displayRows.slice(0, 40).map((r) => (
                 <TR key={r.id}>
                   <TD>{r.description}</TD>
                   <TD>{formatDateBr(r.competenceDate)}</TD>
+                  <TD>{formatDateBr(r.dueDate)}</TD>
                   <TD>{brl(parseFloat(r.amount))}</TD>
                   <TD>{r.paymentMethod}</TD>
                   <TD>{r.status}</TD>

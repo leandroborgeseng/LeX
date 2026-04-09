@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import api from '@/lib/api';
 import { apiErrorMessage } from '@/lib/api-error';
-import { brl, formatDateBr } from '@/lib/format';
+import { brl, formatDateBr, isDueWithinDaysFromToday, todayDateInputValue } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +25,9 @@ type Rev = {
 };
 
 export default function Receitas() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const listFilter = searchParams.get('filter');
+
   const [entities, setEntities] = useState<Entity[]>([]);
   const [cats, setCats] = useState<Cat[]>([]);
   const [payers, setPayers] = useState<Payer[]>([]);
@@ -35,8 +39,8 @@ export default function Receitas() {
   const [gross, setGross] = useState('');
   const [tax, setTax] = useState('0');
   const [net, setNet] = useState('');
-  const [competence, setCompetence] = useState('');
-  const [due, setDue] = useState('');
+  const [competence, setCompetence] = useState(() => todayDateInputValue());
+  const [due, setDue] = useState(() => todayDateInputValue());
   const [type, setType] = useState<'RECORRENTE' | 'ESPORADICA'>('ESPORADICA');
   const [categoryId, setCategoryId] = useState('');
   const [payerId, setPayerId] = useState('');
@@ -64,6 +68,14 @@ export default function Receitas() {
   useEffect(() => {
     load();
   }, []);
+
+  const displayRows = useMemo(() => {
+    if (listFilter !== 'proximos') return rows;
+    return rows.filter(
+      (r) =>
+        (r.status === 'PREVISTO' || r.status === 'ATRASADO') && isDueWithinDaysFromToday(r.dueDate, 30),
+    );
+  }, [rows, listFilter]);
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -96,6 +108,8 @@ export default function Receitas() {
         setDescription('');
         setGross('');
         setNet('');
+        setCompetence(todayDateInputValue());
+        setDue(todayDateInputValue());
         return;
       }
       if (axios.isAxiosError(err) && err.response?.status === 400) {
@@ -107,12 +121,25 @@ export default function Receitas() {
     setDescription('');
     setGross('');
     setNet('');
+    setCompetence(todayDateInputValue());
+    setDue(todayDateInputValue());
     await load();
   }
 
   return (
     <div className="space-y-6 pb-2">
       <h1 className="text-xl font-semibold md:text-2xl">Receitas</h1>
+      {listFilter === 'proximos' && (
+        <div className="flex flex-col gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            A mostrar apenas receitas <strong>previstas ou atrasadas</strong> com vencimento nos próximos{' '}
+            <strong>30 dias</strong>.
+          </span>
+          <Button type="button" variant="outline" size="sm" className="shrink-0 touch-manipulation" onClick={() => setSearchParams({})}>
+            Ver todas
+          </Button>
+        </div>
+      )}
       {queueHint && (
         <p className="rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-primary">{queueHint}</p>
       )}
@@ -248,9 +275,14 @@ export default function Receitas() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Últimas receitas</CardTitle>
+          <CardTitle className="text-base">
+            {listFilter === 'proximos' ? 'Receitas a vencer (filtro)' : 'Últimas receitas'}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          {listFilter === 'proximos' && displayRows.length === 0 && (
+            <p className="text-sm text-muted-foreground">Nenhuma receita corresponde a este filtro.</p>
+          )}
           <div className="hidden md:block">
             <Table>
               <THead>
@@ -263,7 +295,7 @@ export default function Receitas() {
                 </TR>
               </THead>
               <TBody>
-                {rows.slice(0, 40).map((r) => (
+                {displayRows.slice(0, 40).map((r) => (
                   <TR key={r.id}>
                     <TD>{r.description}</TD>
                     <TD>{formatDateBr(r.competenceDate)}</TD>
@@ -276,7 +308,7 @@ export default function Receitas() {
             </Table>
           </div>
           <ul className="space-y-2 md:hidden">
-            {rows.slice(0, 40).map((r) => (
+            {displayRows.slice(0, 40).map((r) => (
               <li
                 key={r.id}
                 className="rounded-lg border border-border bg-card/80 px-3 py-3 text-sm shadow-sm"

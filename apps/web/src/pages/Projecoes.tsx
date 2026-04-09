@@ -71,10 +71,8 @@ export default function Projecoes() {
         </CardContent>
       </Card>
       <p className="text-xs text-muted-foreground">
-        Simulações de impacto de contrato, choque de despesa e quitação antecipada de financiamento: endpoints{' '}
-        <code className="rounded bg-muted px-1">/api/projections/contract-impact</code>,{' '}
-        <code className="rounded bg-muted px-1">expense-shock</code> e{' '}
-        <code className="rounded bg-muted px-1">early-payoff</code> na API.
+        Simulações avançadas (impacto de contrato, choque de despesa, quitação antecipada de financiamento) existem na
+        API para integrações; a interface dedicada a esses cenários pode ser acrescentada numa próxima versão.
       </p>
     </div>
   );

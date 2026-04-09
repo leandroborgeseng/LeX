@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
-  Building2,
   CreditCard,
   LayoutDashboard,
+  LayoutGrid,
   LogOut,
   Repeat,
   Users,
@@ -12,7 +12,6 @@ import {
   Briefcase,
   Landmark,
   ArrowLeftRight,
-  PieChart,
   LineChart,
   Menu,
   TrendingUp,
@@ -24,12 +23,7 @@ import { OfflineBar } from '@/components/layout/OfflineBar';
 
 const nav = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/entidades', label: 'Entidades PF/PJ', icon: Building2 },
-  { to: '/contas', label: 'Contas bancárias', icon: Landmark },
-  { to: '/cartoes', label: 'Cartões', icon: CreditCard },
-  { to: '/membros', label: 'Membros / originadores', icon: Users },
-  { to: '/categorias', label: 'Categorias', icon: PieChart },
-  { to: '/fontes', label: 'Fontes pagadoras', icon: Wallet },
+  { to: '/estrutura', label: 'Estrutura', icon: LayoutGrid },
   { to: '/receitas', label: 'Receitas', icon: Wallet },
   { to: '/despesas', label: 'Despesas', icon: Repeat },
   { to: '/contratos', label: 'Contratos', icon: Briefcase },
