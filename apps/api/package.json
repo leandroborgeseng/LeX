@@ -7,8 +7,7 @@
     "build": "nest build && node scripts/copy-frontend.mjs",
     "start": "node dist/main",
     "start:prod": "node dist/main",
-    "prisma": "prisma",
-    "postinstall": "node scripts/prisma-postinstall.cjs"
+    "prisma": "prisma"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"

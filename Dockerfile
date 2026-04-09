@@ -6,11 +6,11 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.14.2 --activate
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY scripts/docker-postinstall.cjs scripts/docker-postinstall.cjs
 COPY apps/api/package.json apps/api/
-COPY apps/api/scripts/prisma-postinstall.cjs apps/api/scripts/prisma-postinstall.cjs
 COPY apps/web/package.json apps/web/
 
-# postinstall do @lex/api só gera Prisma se schema existir; aqui ainda não existe o diretório prisma completo
+# postinstall na raiz só gera Prisma se apps/api/prisma/schema.prisma já existir (no estágio inicial, não existe)
 RUN pnpm install --frozen-lockfile
 
 COPY apps ./apps

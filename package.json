@@ -3,6 +3,7 @@
   "private": true,
   "packageManager": "pnpm@9.14.2",
   "scripts": {
+    "postinstall": "node scripts/docker-postinstall.cjs",
     "dev": "concurrently -n api,web -c blue,green \"pnpm --filter @lex/api dev\" \"pnpm --filter @lex/web dev\"",
     "build": "pnpm --filter @lex/web build && pnpm --filter @lex/api build",
     "start": "pnpm --filter @lex/api start:prod",

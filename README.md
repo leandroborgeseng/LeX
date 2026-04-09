@@ -108,6 +108,13 @@ docker exec -it <container> sh -c "cd /app/apps/api && npx prisma db seed"
 
 ## Deploy no Railway
 
+**Importante (monorepo):**
+
+- Use **um único serviço** com o **`Dockerfile` na raiz** do repositório. A API sobe e serve o frontend estático; não é necessário um serviço separado só para `@lex/web`.
+- Em **Settings → Root Directory**, deixe **vazio** (raiz do repo). Se estiver `apps/web`, o build pode usar contexto errado e falhar ou ficar desatualizado.
+- Garanta que o deploy use o branch **`main`** (ou o branch onde você fez push das correções do Docker). Após mudanças no `Dockerfile`, use **Redeploy** (e, se existir, limpe cache de build).
+- A mensagem **subscription is past due** é cobrança da conta Railway: regularize o pagamento ou os deploys podem falhar.
+
 1. Crie um projeto e conecte o repositório (ou use CLI).
 2. Adicione um **volume** montado em **`/data`** para persistir o SQLite.
 3. Variáveis sugeridas:
