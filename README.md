@@ -114,6 +114,7 @@ docker exec -it <container> sh -c "cd /app/apps/api && npx prisma db seed"
 **Importante (monorepo):**
 
 - Use **um único serviço** com o **`Dockerfile` na raiz** do repositório. A API sobe e serve o frontend estático; não é necessário um serviço separado só para `@lex/web`.
+- Se nos logs aparecer **`VITE … localhost:5173`** ou **`@lex/web dev`**, o Railway está a subir o **Vite em modo dev** (serviço com Root em `apps/web`, Nixpacks ou comando `pnpm dev`). **Apague esse serviço** ou mude para **Dockerfile na raiz** com Root **vazio**. O arranque correcto mostra `LeX: migrando…` / `LeX API em http://0.0.0.0:…`.
 - Em **Settings → Root Directory**, deixe **vazio** (raiz do repo). Se estiver `apps/web`, o build pode usar contexto errado e falhar ou ficar desatualizado.
 - Garanta que o deploy use o branch **`main`** (ou o branch onde você fez push das correções do Docker). Após mudanças no `Dockerfile`, use **Redeploy** (e, se existir, limpe cache de build).
 - A mensagem **subscription is past due** é cobrança da conta Railway: regularize o pagamento ou os deploys podem falhar.
