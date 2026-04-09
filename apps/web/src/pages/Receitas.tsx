@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 import api from '@/lib/api';
 import { brl, formatDateBr } from '@/lib/format';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,7 @@ export default function Receitas() {
   const [accountId, setAccountId] = useState('');
   const [recFreq, setRecFreq] = useState<'MONTHLY' | 'YEARLY' | 'CUSTOM'>('MONTHLY');
   const [future, setFuture] = useState('12');
+  const [queueHint, setQueueHint] = useState('');
 
   async function load() {
     const [e, c, p, a, r] = await Promise.all([
@@ -64,6 +66,7 @@ export default function Receitas() {
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
+    setQueueHint('');
     const g = parseFloat(gross.replace(',', '.')) || 0;
     const t = parseFloat(tax.replace(',', '.')) || 0;
     const n = net ? parseFloat(net.replace(',', '.')) : g - t;
@@ -84,7 +87,23 @@ export default function Receitas() {
       body.recurrenceFrequency = recFreq;
       body.futureOccurrences = parseInt(future, 10) || 12;
     }
-    await api.post('/revenues', body);
+    try {
+      await api.post('/revenues', body);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'lexQueued' in err && (err as { lexQueued?: boolean }).lexQueued) {
+        setQueueHint('Sem rede: receita guardada na fila e será enviada quando voltar a internet.');
+        setDescription('');
+        setGross('');
+        setNet('');
+        return;
+      }
+      if (axios.isAxiosError(err) && err.response?.status === 400) {
+        const m = err.response?.data?.message;
+        setQueueHint(typeof m === 'string' ? m : 'Não foi possível salvar.');
+        return;
+      }
+      throw err;
+    }
     setDescription('');
     setGross('');
     setNet('');
@@ -92,18 +111,21 @@ export default function Receitas() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Receitas</h1>
+    <div className="space-y-6 pb-2">
+      <h1 className="text-xl font-semibold md:text-2xl">Receitas</h1>
+      {queueHint && (
+        <p className="rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-primary">{queueHint}</p>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Nova receita</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={create} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <form onSubmit={create} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-2">
               <Label>Entidade</Label>
               <select
-                className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm"
+                className="min-h-11 w-full rounded-md border border-input bg-card px-3 py-2 text-base md:text-sm touch-manipulation"
                 value={financialEntityId}
                 onChange={(e) => setFinancialEntityId(e.target.value)}
               >
@@ -121,7 +143,7 @@ export default function Receitas() {
             <div className="space-y-2">
               <Label>Tipo</Label>
               <select
-                className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm"
+                className="min-h-11 w-full rounded-md border border-input bg-card px-3 py-2 text-base md:text-sm touch-manipulation"
                 value={type}
                 onChange={(e) => setType(e.target.value as 'RECORRENTE' | 'ESPORADICA')}
               >
@@ -152,7 +174,7 @@ export default function Receitas() {
             <div className="space-y-2">
               <Label>Categoria</Label>
               <select
-                className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm"
+                className="min-h-11 w-full rounded-md border border-input bg-card px-3 py-2 text-base md:text-sm touch-manipulation"
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
               >
@@ -167,7 +189,7 @@ export default function Receitas() {
             <div className="space-y-2">
               <Label>Fonte pagadora</Label>
               <select
-                className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm"
+                className="min-h-11 w-full rounded-md border border-input bg-card px-3 py-2 text-base md:text-sm touch-manipulation"
                 value={payerId}
                 onChange={(e) => setPayerId(e.target.value)}
               >
@@ -182,7 +204,7 @@ export default function Receitas() {
             <div className="space-y-2">
               <Label>Conta destino</Label>
               <select
-                className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm"
+                className="min-h-11 w-full rounded-md border border-input bg-card px-3 py-2 text-base md:text-sm touch-manipulation"
                 value={accountId}
                 onChange={(e) => setAccountId(e.target.value)}
               >
@@ -199,7 +221,7 @@ export default function Receitas() {
                 <div className="space-y-2">
                   <Label>Recorrência</Label>
                   <select
-                    className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm"
+                    className="min-h-11 w-full rounded-md border border-input bg-card px-3 py-2 text-base md:text-sm touch-manipulation"
                     value={recFreq}
                     onChange={(e) =>
                       setRecFreq(e.target.value as 'MONTHLY' | 'YEARLY' | 'CUSTOM')
@@ -216,8 +238,10 @@ export default function Receitas() {
                 </div>
               </>
             )}
-            <div className="flex items-end">
-              <Button type="submit">Salvar</Button>
+            <div className="flex items-end sm:col-span-2 lg:col-span-1">
+              <Button type="submit" className="min-h-11 w-full touch-manipulation sm:w-auto">
+                Salvar
+              </Button>
             </div>
           </form>
         </CardContent>
@@ -226,29 +250,48 @@ export default function Receitas() {
         <CardHeader>
           <CardTitle className="text-base">Últimas receitas</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <THead>
-              <TR>
-                <TH>Descrição</TH>
-                <TH>Competência</TH>
-                <TH>Vencimento</TH>
-                <TH>Líquido</TH>
-                <TH>Status</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {rows.slice(0, 40).map((r) => (
-                <TR key={r.id}>
-                  <TD>{r.description}</TD>
-                  <TD>{formatDateBr(r.competenceDate)}</TD>
-                  <TD>{formatDateBr(r.dueDate)}</TD>
-                  <TD>{brl(parseFloat(r.netAmount))}</TD>
-                  <TD>{r.status}</TD>
+        <CardContent className="space-y-3">
+          <div className="hidden md:block">
+            <Table>
+              <THead>
+                <TR>
+                  <TH>Descrição</TH>
+                  <TH>Competência</TH>
+                  <TH>Vencimento</TH>
+                  <TH>Líquido</TH>
+                  <TH>Status</TH>
                 </TR>
-              ))}
-            </TBody>
-          </Table>
+              </THead>
+              <TBody>
+                {rows.slice(0, 40).map((r) => (
+                  <TR key={r.id}>
+                    <TD>{r.description}</TD>
+                    <TD>{formatDateBr(r.competenceDate)}</TD>
+                    <TD>{formatDateBr(r.dueDate)}</TD>
+                    <TD>{brl(parseFloat(r.netAmount))}</TD>
+                    <TD>{r.status}</TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+          </div>
+          <ul className="space-y-2 md:hidden">
+            {rows.slice(0, 40).map((r) => (
+              <li
+                key={r.id}
+                className="rounded-lg border border-border bg-card/80 px-3 py-3 text-sm shadow-sm"
+              >
+                <p className="font-medium leading-snug">{r.description}</p>
+                <p className="mt-1 text-muted-foreground">
+                  {formatDateBr(r.competenceDate)} · venc. {formatDateBr(r.dueDate)}
+                </p>
+                <p className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-base font-semibold text-foreground">{brl(parseFloat(r.netAmount))}</span>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{r.status}</span>
+                </p>
+              </li>
+            ))}
+          </ul>
         </CardContent>
       </Card>
     </div>

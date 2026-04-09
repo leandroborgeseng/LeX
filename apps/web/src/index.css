@@ -29,4 +29,9 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
+  button,
+  a,
+  [role='button'] {
+    touch-action: manipulation;
+  }
 }

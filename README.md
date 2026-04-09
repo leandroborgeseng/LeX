@@ -10,6 +10,8 @@ Monorepo **full stack** para controle financeiro **pessoal (PF)** e **empresaria
 | Frontend | React 18, Vite 6, TypeScript, Tailwind, shadcn-style (Radix + CVA) |
 | Auth     | JWT (login e-mail + senha)                       |
 | API docs | Swagger em `/api/docs`                           |
+| Mobile   | Layout responsivo, barra inferior + menu, **PWA** (instalar no ecrã inicial) |
+| Offline  | Fila local (IndexedDB) para **POST/PUT/PATCH/DELETE** sem rede; sincroniza ao voltar online (não faz cache de leituras da API) |
 
 ## Estrutura
 
@@ -88,6 +90,12 @@ docker-compose.yml → um serviço `app`, volume `lex_sqlite` → /data
    ```
 
    Abra http://localhost:3000 — a SPA é servida na raiz e a API em `/api`.
+
+### Celular e PWA
+
+- No **telefone**, use o Safari (iOS) ou Chrome (Android), faça login e no menu do browser escolha **Adicionar ao ecrã inicial** / **Instalar app**. O `vite-plugin-pwa` regista o service worker (interface em cache; **dados financeiros** continuam a vir da API em tempo real).
+- **Sem rede**: criar/editar registos que usem `POST`/`PUT`/`PATCH`/`DELETE` (exceto login) é guardado na **fila**; quando a ligação voltar, a app tenta **sincronizar** automaticamente ou pode tocar em **Sincronizar** na barra amarela. **Receitas** mostram mensagem quando o envio fica na fila.
+- O login **não** é guardado offline por segurança.
 
 ## Docker (container único)
 
