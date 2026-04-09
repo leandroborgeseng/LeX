@@ -11,6 +11,12 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set('trust proxy', 1);
+  expressApp.get('/health', (_req: Request, res: Response) => {
+    res.status(200).type('text/plain').send('ok');
+  });
+
   app.setGlobalPrefix('api');
   app.useGlobalPipes(
     new ValidationPipe({
@@ -50,7 +56,7 @@ async function bootstrap() {
     });
   });
 
-  const port = parseInt(process.env.PORT ?? '3000', 10);
+  const port = parseInt(process.env.PORT || '3000', 10) || 3000;
   await app.listen(port, '0.0.0.0');
   // eslint-disable-next-line no-console
   console.log(`LeX API em http://0.0.0.0:${port} (docs: /api/docs)`);

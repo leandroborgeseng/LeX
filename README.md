@@ -132,7 +132,8 @@ docker exec -it <container> sh -c "cd /app/apps/api && npx prisma db seed"
    cd apps/api && npx prisma db seed
    ```
 
-6. Acesse a URL pública: interface web na raiz, API em `/api`, documentação em `/api/docs`.
+6. Em **Settings → Networking**, gere um **domínio público** (ou use o que o Railway atribui). Serviço só com rede interna ou URL errada costuma aparecer como *Application failed to respond*. Health check: `GET /health` → `ok`.
+7. Acesse a URL pública: interface web na raiz, API em `/api`, documentação em `/api/docs`.
 
 ## Scripts npm (raiz)
 
