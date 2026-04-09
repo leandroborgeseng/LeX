@@ -1,0 +1,354 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum EntityType {
+  PF
+  PJ
+}
+
+enum RevenueType {
+  RECORRENTE
+  ESPORADICA
+}
+
+enum RevenueStatus {
+  PREVISTO
+  RECEBIDO
+  ATRASADO
+  CANCELADO
+}
+
+enum ExpenseType {
+  RECORRENTE
+  ESPORADICA
+}
+
+enum ExpenseStatus {
+  PREVISTO
+  PAGO
+  ATRASADO
+  CANCELADO
+}
+
+enum PaymentMethod {
+  CONTA_BANCARIA
+  CARTAO_CREDITO
+  DINHEIRO
+  TRANSFERENCIA
+}
+
+enum TransferType {
+  PF_PARA_PJ
+  PJ_PARA_PF
+  APORTE
+  PRO_LABORE
+  REEMBOLSO
+  AJUSTE
+}
+
+enum RecurrenceFrequency {
+  MONTHLY
+  YEARLY
+  CUSTOM
+}
+
+enum AccountType {
+  CORRENTE
+  POUPANCA
+  INVESTIMENTO
+  OUTROS
+}
+
+enum AmortizationSystem {
+  SAC
+  PRICE
+}
+
+enum ContractStatus {
+  ATIVO
+  ENCERRADO
+  SUSPENSO
+}
+
+enum CategoryKind {
+  REVENUE
+  EXPENSE
+}
+
+enum InvoiceStatus {
+  ABERTA
+  FECHADA
+  PAGA
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model FinancialEntity {
+  id        String     @id @default(uuid())
+  type      EntityType
+  name      String
+  createdAt DateTime   @default(now())
+
+  bankAccounts       BankAccount[]
+  creditCards        CreditCard[]
+  revenues           Revenue[]
+  expenses           Expense[]
+  transfersFrom      InternalTransfer[] @relation("TransferFromEntity")
+  transfersTo        InternalTransfer[] @relation("TransferToEntity")
+  cardTransactions   CreditCardTransaction[]
+  financings         Financing[]
+}
+
+model HouseholdMember {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  active    Boolean  @default(true)
+  expenses  Expense[]
+  cardTx    CreditCardTransaction[]
+}
+
+model Category {
+  id        String        @id @default(uuid())
+  name      String
+  kind      CategoryKind
+  parentId  String?
+  parent    Category?     @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[]    @relation("CategoryTree")
+  revenues  Revenue[]
+  expenses  Expense[]
+  cardTx    CreditCardTransaction[]
+
+  @@unique([name, kind])
+}
+
+model PayerSource {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  revenues Revenue[]
+}
+
+model BankAccount {
+  id                String          @id @default(uuid())
+  financialEntityId String
+  financialEntity   FinancialEntity @relation(fields: [financialEntityId], references: [id], onDelete: Cascade)
+  name              String
+  bank              String?
+  type              AccountType     @default(CORRENTE)
+  initialBalance    Decimal         @default(0)
+  active            Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+
+  revenuesDest     Revenue[]          @relation("RevenueDestinationAccount")
+  expensesAccount  Expense[]          @relation("ExpenseBankAccount")
+  transfersFrom    InternalTransfer[] @relation("TransferFromAccount")
+  transfersTo      InternalTransfer[] @relation("TransferToAccount")
+}
+
+model CreditCard {
+  id                String          @id @default(uuid())
+  financialEntityId String
+  financialEntity   FinancialEntity @relation(fields: [financialEntityId], references: [id], onDelete: Cascade)
+  name              String
+  bank              String?
+  limitAmount       Decimal?
+  closingDay        Int?
+  dueDay            Int?
+  active            Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+
+  invoices     CreditCardInvoice[]
+  transactions CreditCardTransaction[]
+  expenses     Expense[]               @relation("ExpenseCreditCard")
+}
+
+model Contract {
+  id                String              @id @default(uuid())
+  clientName        String
+  monthlyGross      Decimal             @default(0)
+  estimatedTax      Decimal             @default(0)
+  estimatedOpCost   Decimal             @default(0)
+  estimatedNet      Decimal             @default(0)
+  startDate         DateTime?
+  endDate           DateTime?
+  recurrence        RecurrenceFrequency @default(MONTHLY)
+  status            ContractStatus      @default(ATIVO)
+  notes             String?
+  createdAt         DateTime            @default(now())
+}
+
+model Employee {
+  id           String   @id @default(uuid())
+  name         String
+  role         String?
+  salary       Decimal  @default(0)
+  charges      Decimal  @default(0)
+  benefits     Decimal  @default(0)
+  totalMonthly Decimal  @default(0)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+model Financing {
+  id                 String              @id @default(uuid())
+  financialEntityId  String?
+  financialEntity    FinancialEntity?    @relation(fields: [financialEntityId], references: [id], onDelete: SetNull)
+  name               String
+  creditor           String?
+  originalValue      Decimal
+  monthlyRate        Decimal
+  installmentsCount  Int
+  amortSystem        AmortizationSystem
+  startDate          DateTime
+  installmentValue   Decimal?
+  currentBalance     Decimal
+  totalPaid          Decimal             @default(0)
+  interestPaid       Decimal             @default(0)
+  amortAccumulated   Decimal             @default(0)
+  createdAt          DateTime            @default(now())
+
+  installments FinancingInstallment[]
+}
+
+model FinancingInstallment {
+  id            String        @id @default(uuid())
+  financingId   String
+  financing     Financing     @relation(fields: [financingId], references: [id], onDelete: Cascade)
+  number        Int
+  dueDate       DateTime
+  payment       Decimal
+  interest      Decimal
+  amortization  Decimal
+  balanceAfter  Decimal
+  status        ExpenseStatus @default(PREVISTO)
+  paidAt        DateTime?
+}
+
+model CreditCardInvoice {
+  id           String        @id @default(uuid())
+  creditCardId String
+  creditCard   CreditCard    @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  year         Int
+  month        Int
+  closingDate  DateTime
+  dueDate      DateTime
+  total        Decimal       @default(0)
+  status       InvoiceStatus @default(ABERTA)
+
+  transactions CreditCardTransaction[]
+
+  @@unique([creditCardId, year, month])
+}
+
+model CreditCardTransaction {
+  id                  String          @id @default(uuid())
+  creditCardId        String
+  creditCard          CreditCard      @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  financialEntityId   String
+  financialEntity     FinancialEntity @relation(fields: [financialEntityId], references: [id], onDelete: Cascade)
+  invoiceId           String?
+  invoice             CreditCardInvoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  description         String
+  amount              Decimal
+  purchaseDate        DateTime
+  categoryId          String?
+  category            Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  originatorId        String?
+  originator          HouseholdMember? @relation(fields: [originatorId], references: [id], onDelete: SetNull)
+  installmentGroup    String?
+  installmentNumber   Int             @default(1)
+  installmentTotal    Int             @default(1)
+  competenceYear      Int
+  competenceMonth     Int
+  createdAt           DateTime        @default(now())
+}
+
+model InternalTransfer {
+  id                String          @id @default(uuid())
+  type              TransferType
+  amount            Decimal
+  date              DateTime
+  description       String?
+  fromEntityId      String?
+  fromEntity        FinancialEntity? @relation("TransferFromEntity", fields: [fromEntityId], references: [id], onDelete: SetNull)
+  toEntityId        String?
+  toEntity          FinancialEntity? @relation("TransferToEntity", fields: [toEntityId], references: [id], onDelete: SetNull)
+  fromAccountId     String?
+  fromAccount       BankAccount?     @relation("TransferFromAccount", fields: [fromAccountId], references: [id], onDelete: SetNull)
+  toAccountId       String?
+  toAccount         BankAccount?     @relation("TransferToAccount", fields: [toAccountId], references: [id], onDelete: SetNull)
+  createdAt         DateTime        @default(now())
+}
+
+model Revenue {
+  id                    String          @id @default(uuid())
+  financialEntityId     String
+  financialEntity       FinancialEntity @relation(fields: [financialEntityId], references: [id], onDelete: Cascade)
+  description           String
+  type                  RevenueType
+  categoryId            String?
+  category              Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  payerSourceId         String?
+  payerSource           PayerSource?    @relation(fields: [payerSourceId], references: [id], onDelete: SetNull)
+  grossAmount           Decimal
+  taxDiscount           Decimal         @default(0)
+  netAmount             Decimal
+  competenceDate        DateTime
+  dueDate               DateTime
+  receivedAt            DateTime?
+  destinationAccountId  String?
+  destinationAccount    BankAccount?    @relation("RevenueDestinationAccount", fields: [destinationAccountId], references: [id], onDelete: SetNull)
+  status                RevenueStatus   @default(PREVISTO)
+  notes                 String?
+  isRecurringTemplate   Boolean         @default(false)
+  recurrenceFrequency   RecurrenceFrequency?
+  recurrenceEndDate     DateTime?
+  recurringParentId     String?
+  recurringParent       Revenue?        @relation("RecurringRevenue", fields: [recurringParentId], references: [id], onDelete: Cascade)
+  recurringChildren     Revenue[]       @relation("RecurringRevenue")
+  createdAt             DateTime        @default(now())
+}
+
+model Expense {
+  id                  String          @id @default(uuid())
+  financialEntityId   String
+  financialEntity     FinancialEntity @relation(fields: [financialEntityId], references: [id], onDelete: Cascade)
+  description         String
+  type                ExpenseType
+  categoryId          String?
+  category            Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategoryLabel    String?
+  originatorId        String?
+  originator          HouseholdMember? @relation(fields: [originatorId], references: [id], onDelete: SetNull)
+  amount              Decimal
+  competenceDate      DateTime
+  dueDate             DateTime
+  paidAt              DateTime?
+  status              ExpenseStatus   @default(PREVISTO)
+  paymentMethod       PaymentMethod
+  bankAccountId       String?
+  bankAccount         BankAccount?    @relation("ExpenseBankAccount", fields: [bankAccountId], references: [id], onDelete: SetNull)
+  creditCardId        String?
+  creditCard          CreditCard?     @relation("ExpenseCreditCard", fields: [creditCardId], references: [id], onDelete: SetNull)
+  mandatory           Boolean         @default(true)
+  notes               String?
+  isRecurringTemplate Boolean         @default(false)
+  recurrenceFrequency RecurrenceFrequency?
+  recurrenceEndDate   DateTime?
+  recurringParentId   String?
+  recurringParent     Expense?        @relation("RecurringExpense", fields: [recurringParentId], references: [id], onDelete: Cascade)
+  recurringChildren   Expense[]       @relation("RecurringExpense")
+  createdAt           DateTime        @default(now())
+}

@@ -1,0 +1,17 @@
+{
+  "name": "lex-finance",
+  "private": true,
+  "packageManager": "pnpm@9.14.2",
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"pnpm --filter @lex/api dev\" \"pnpm --filter @lex/web dev\"",
+    "build": "pnpm --filter @lex/web build && pnpm --filter @lex/api build",
+    "start": "pnpm --filter @lex/api start:prod",
+    "db:generate": "pnpm --filter @lex/api prisma generate",
+    "db:push": "pnpm --filter @lex/api prisma db push",
+    "db:migrate": "pnpm --filter @lex/api prisma migrate deploy",
+    "db:seed": "pnpm --filter @lex/api prisma db seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
