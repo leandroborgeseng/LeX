@@ -120,7 +120,7 @@ docker exec -it <container> sh -c "cd /app/apps/api && npx prisma db seed"
 - O **`Dockerfile` copia `apps/` antes de `pnpm install`**, para o schema em `apps/api/prisma` existir durante o install (evita o erro `Could not find Prisma Schema` em builds antigos em cache).
 
 1. Crie um projeto e conecte o repositório (ou use CLI).
-2. Adicione um **volume** montado em **`/data`** para persistir o SQLite.
+2. Adicione um **volume** montado em **`/data`** para persistir o SQLite. Sem volume (ou com caminho errado), o SQLite pode falhar com **Unable to open the database file** (erro 14). A imagem usa um entrypoint que verifica se `/data` é gravável antes de migrar e subir a API.
 3. Variáveis sugeridas:
    - `JWT_SECRET` — obrigatório em produção.
    - `DATABASE_URL=file:/data/app.db` (já é o padrão do `Dockerfile`; reforce se necessário).

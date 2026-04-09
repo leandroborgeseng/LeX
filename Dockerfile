@@ -8,6 +8,7 @@ RUN corepack enable && corepack prepare pnpm@9.14.2 --activate
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps ./apps
+RUN chmod +x /app/apps/api/scripts/docker-entrypoint.sh
 
 RUN pnpm install --frozen-lockfile
 
@@ -24,4 +25,4 @@ WORKDIR /app/apps/api
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "mkdir -p /data && npx prisma migrate deploy --schema=prisma/schema.prisma && node dist/main.js"]
+ENTRYPOINT ["/app/apps/api/scripts/docker-entrypoint.sh"]
