@@ -5,17 +5,18 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   Min,
   MinLength,
 } from 'class-validator';
 
 export class CreateCreditPurchaseDto {
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   creditCardId!: string;
 
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   financialEntityId!: string;
 
   @IsString()
@@ -30,11 +31,13 @@ export class CreateCreditPurchaseDto {
   purchaseDate!: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   categoryId?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   originatorId?: string;
 
   @IsOptional()

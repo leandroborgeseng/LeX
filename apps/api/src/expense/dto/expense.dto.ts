@@ -13,14 +13,14 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   Min,
   MinLength,
 } from 'class-validator';
 
 export class CreateExpenseDto {
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   financialEntityId!: string;
 
   @IsString()
@@ -31,7 +31,8 @@ export class CreateExpenseDto {
   type!: ExpenseType;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   categoryId?: string;
 
   @IsOptional()
@@ -39,7 +40,8 @@ export class CreateExpenseDto {
   subcategoryLabel?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   originatorId?: string;
 
   @Type(() => Number)
@@ -64,11 +66,13 @@ export class CreateExpenseDto {
   paymentMethod!: PaymentMethod;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   bankAccountId?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   creditCardId?: string;
 
   @IsOptional()
@@ -110,7 +114,8 @@ export class UpdateExpenseDto {
   type?: ExpenseType;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   categoryId?: string | null;
 
   @IsOptional()
@@ -118,7 +123,8 @@ export class UpdateExpenseDto {
   subcategoryLabel?: string | null;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   originatorId?: string | null;
 
   @IsOptional()
@@ -147,11 +153,13 @@ export class UpdateExpenseDto {
   paymentMethod?: PaymentMethod;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   bankAccountId?: string | null;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   creditCardId?: string | null;
 
   @IsOptional()

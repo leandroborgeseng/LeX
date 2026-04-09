@@ -6,7 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
+  MinLength,
 } from 'class-validator';
 
 export class CreateInternalTransferDto {
@@ -25,18 +25,22 @@ export class CreateInternalTransferDto {
   description?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   fromEntityId?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   toEntityId?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   fromAccountId?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   toAccountId?: string;
 }

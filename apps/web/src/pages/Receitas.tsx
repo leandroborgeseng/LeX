@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import api from '@/lib/api';
+import { apiErrorMessage } from '@/lib/api-error';
 import { brl, formatDateBr } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -98,8 +99,7 @@ export default function Receitas() {
         return;
       }
       if (axios.isAxiosError(err) && err.response?.status === 400) {
-        const m = err.response?.data?.message;
-        setQueueHint(typeof m === 'string' ? m : 'Não foi possível salvar.');
+        setQueueHint(apiErrorMessage(err.response?.data));
         return;
       }
       throw err;

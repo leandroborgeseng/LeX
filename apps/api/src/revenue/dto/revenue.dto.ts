@@ -8,14 +8,14 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   Min,
   MinLength,
 } from 'class-validator';
 
 export class CreateRevenueDto {
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   financialEntityId!: string;
 
   @IsString()
@@ -26,11 +26,13 @@ export class CreateRevenueDto {
   type!: RevenueType;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   categoryId?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   payerSourceId?: string;
 
   @Type(() => Number)
@@ -57,7 +59,8 @@ export class CreateRevenueDto {
   receivedAt?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   destinationAccountId?: string;
 
   @IsOptional()
@@ -99,11 +102,13 @@ export class UpdateRevenueDto {
   type?: RevenueType;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   categoryId?: string | null;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   payerSourceId?: string | null;
 
   @IsOptional()
@@ -134,7 +139,8 @@ export class UpdateRevenueDto {
   receivedAt?: string | null;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   destinationAccountId?: string | null;
 
   @IsOptional()

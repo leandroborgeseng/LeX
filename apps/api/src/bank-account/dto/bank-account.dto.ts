@@ -6,12 +6,12 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
   MinLength,
 } from 'class-validator';
 
 export class CreateBankAccountDto {
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   financialEntityId!: string;
 
   @IsString()

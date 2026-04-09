@@ -7,14 +7,14 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
   Min,
   MinLength,
 } from 'class-validator';
 
 export class CreateFinancingDto {
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   financialEntityId?: string;
 
   @IsString()

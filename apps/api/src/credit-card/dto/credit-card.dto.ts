@@ -5,14 +5,14 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   Min,
   MinLength,
 } from 'class-validator';
 
 export class CreateCreditCardDto {
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   financialEntityId!: string;
 
   @IsString()
