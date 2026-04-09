@@ -18,6 +18,8 @@ export class DashboardService {
 
   async summary() {
     const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
     const start = startOfMonth(now);
     const end = endOfMonth(now);
     const balances = await this.balance.entityTypeTotals();
@@ -121,8 +123,6 @@ export class DashboardService {
       this.prisma.creditCard.findMany({ where: { active: true } }),
     ]);
 
-    const y = now.getFullYear();
-    const m = now.getMonth() + 1;
     const cardSummaries = await Promise.all(
       cards.map(async (c) => {
         const inv = await this.prisma.creditCardInvoice.findUnique({
