@@ -7,15 +7,14 @@ RUN corepack enable && corepack prepare pnpm@9.14.2 --activate
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json apps/api/
-# Necessário antes de `pnpm install`: o postinstall do @lex/api roda `prisma generate`
-COPY apps/api/prisma/schema.prisma apps/api/prisma/schema.prisma
+COPY apps/api/scripts/prisma-postinstall.cjs apps/api/scripts/prisma-postinstall.cjs
 COPY apps/web/package.json apps/web/
 
+# postinstall do @lex/api só gera Prisma se schema existir; aqui ainda não existe o diretório prisma completo
 RUN pnpm install --frozen-lockfile
 
 COPY apps ./apps
 
-# Garante client alinhado ao schema final (migrations/seed no repositório completo)
 RUN pnpm --filter @lex/api exec prisma generate --schema=prisma/schema.prisma
 
 RUN pnpm run build
