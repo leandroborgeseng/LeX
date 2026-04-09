@@ -19,6 +19,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { ReportsModule } from './reports/reports.module';
 import { ProjectionsModule } from './projections/projections.module';
 import { LedgerModule } from './ledger/ledger.module';
+import { CdbApplicationModule } from './cdb-application/cdb-application.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { LedgerModule } from './ledger/ledger.module';
     DashboardModule,
     ReportsModule,
     ProjectionsModule,
+    CdbApplicationModule,
   ],
 })
 export class AppModule {}

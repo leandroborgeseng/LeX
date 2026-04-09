@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '@/lib/api';
 import { brl } from '@/lib/format';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +37,12 @@ export default function Projecoes() {
       <h1 className="text-2xl font-semibold">Projeções</h1>
       <p className="text-sm text-muted-foreground">
         Saldo consolidado projetado mês a mês com base em receitas/despesas previstas cadastradas. Cenário
-        conservador aplica receitas −5% e despesas +5%.
+        conservador aplica receitas −5% e despesas +5%. Para <strong>CDB (% CDI)</strong> e projeção de 5 anos com
+        IR regressivo, use{' '}
+        <Link to="/cdb" className="font-medium text-primary underline-offset-4 hover:underline">
+          CDB / CDI
+        </Link>
+        .
       </p>
       <Card>
         <CardHeader>

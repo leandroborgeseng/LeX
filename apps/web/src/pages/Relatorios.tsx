@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '@/lib/api';
 import { brl } from '@/lib/format';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +24,13 @@ export default function Relatorios() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Relatórios</h1>
+      <p className="text-sm text-muted-foreground">
+        Investimentos:{' '}
+        <Link to="/cdb" className="font-medium text-primary underline-offset-4 hover:underline">
+          CDB / CDI
+        </Link>{' '}
+        — cadastro, % do CDI (100% ou 110%), IR regressivo e projeção de 5 anos.
+      </p>
       <div className="max-w-xs space-y-2">
         <Label>Entidade</Label>
         <select

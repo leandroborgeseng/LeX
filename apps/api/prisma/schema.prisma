@@ -110,6 +110,25 @@ model FinancialEntity {
   transfersTo        InternalTransfer[] @relation("TransferToEntity")
   cardTransactions   CreditCardTransaction[]
   financings         Financing[]
+  cdbApplications    CdbApplication[]
+}
+
+/// CDB prefixado/pós-fixado indexado a % do CDI — projeção com IR regressivo sobre o rendimento.
+model CdbApplication {
+  id                        String            @id @default(uuid())
+  financialEntityId         String?
+  financialEntity           FinancialEntity?  @relation(fields: [financialEntityId], references: [id], onDelete: SetNull)
+  name                      String
+  institution               String?
+  principal                 Decimal
+  applicationDate           DateTime
+  maturityDate              DateTime?
+  indexerPercentOfCdi       Decimal
+  assumedCdiAnnualPercent   Decimal           @default(10.5)
+  active                    Boolean           @default(true)
+  notes                     String?
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
 }
 
 model HouseholdMember {

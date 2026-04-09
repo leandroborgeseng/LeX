@@ -15,6 +15,7 @@ import {
   PieChart,
   LineChart,
   Menu,
+  TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ const nav = [
   { to: '/transferencias', label: 'Transferências internas', icon: ArrowLeftRight },
   { to: '/cartao-lancamentos', label: 'Lançamentos no cartão', icon: CreditCard },
   { to: '/relatorios', label: 'Relatórios', icon: FileText },
+  { to: '/cdb', label: 'CDB / CDI', icon: TrendingUp },
   { to: '/projecoes', label: 'Projeções', icon: LineChart },
 ];
 

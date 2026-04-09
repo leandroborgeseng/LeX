@@ -18,6 +18,7 @@ import Transferencias from '@/pages/Transferencias';
 import CartaoLancamentos from '@/pages/CartaoLancamentos';
 import Relatorios from '@/pages/Relatorios';
 import Projecoes from '@/pages/Projecoes';
+import Cdb from '@/pages/Cdb';
 
 function Protected({ children }: { children: ReactNode }) {
   const t = localStorage.getItem('lex_token');
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="/transferencias" element={<Transferencias />} />
           <Route path="/cartao-lancamentos" element={<CartaoLancamentos />} />
           <Route path="/relatorios" element={<Relatorios />} />
+          <Route path="/cdb" element={<Cdb />} />
           <Route path="/projecoes" element={<Projecoes />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

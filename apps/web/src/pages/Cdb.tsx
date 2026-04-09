@@ -1,0 +1,327 @@
+import { useCallback, useEffect, useState } from 'react';
+import api from '@/lib/api';
+import { brl } from '@/lib/format';
+import { apiErrorMessage } from '@/lib/api-error';
+import axios from 'axios';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table';
+import {
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Legend,
+} from 'recharts';
+
+type Entity = { id: string; name: string; type: string };
+type AppRow = {
+  id: string;
+  name: string;
+  institution: string | null;
+  principal: string;
+  applicationDate: string;
+  maturityDate: string | null;
+  indexerPercentOfCdi: string;
+  assumedCdiAnnualPercent: string;
+  active: boolean;
+  financialEntity: { name: string } | null;
+};
+
+type ProjMonth = {
+  month: string;
+  totalPrincipal: number;
+  totalGross: number;
+  totalGain: number;
+  totalIr: number;
+  totalNet: number;
+};
+
+export default function Cdb() {
+  const [entities, setEntities] = useState<Entity[]>([]);
+  const [rows, setRows] = useState<AppRow[]>([]);
+  const [proj, setProj] = useState<ProjMonth[]>([]);
+  const [methodology, setMethodology] = useState('');
+  const [lastNet, setLastNet] = useState<number | null>(null);
+  const [hint, setHint] = useState('');
+  const [entityId, setEntityId] = useState('');
+
+  const [name, setName] = useState('');
+  const [institution, setInstitution] = useState('');
+  const [principal, setPrincipal] = useState('');
+  const [applicationDate, setApplicationDate] = useState('');
+  const [maturityDate, setMaturityDate] = useState('');
+  const [pctCdi, setPctCdi] = useState('110');
+  const [cdiAa, setCdiAa] = useState('10.5');
+  const [formEntity, setFormEntity] = useState('');
+
+  const [projTick, setProjTick] = useState(0);
+
+  const load = useCallback(async () => {
+    const [e, a] = await Promise.all([api.get<Entity[]>('/financial-entities'), api.get<AppRow[]>('/cdb-applications')]);
+    setEntities(e.data);
+    setRows(a.data);
+    setFormEntity((prev) => prev || (e.data[0]?.id ?? ''));
+  }, []);
+
+  const fetchProjection = useCallback(async () => {
+    const q = entityId ? `?years=5&financialEntityId=${encodeURIComponent(entityId)}` : '?years=5';
+    const p = await api.get<{ months: ProjMonth[]; methodology: string; lastMonth: ProjMonth }>(
+      `/cdb-applications/projection/summary${q}`,
+    );
+    setProj(p.data.months);
+    setMethodology(p.data.methodology);
+    setLastNet(p.data.lastMonth?.totalNet ?? null);
+  }, [entityId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    void fetchProjection();
+  }, [fetchProjection, projTick]);
+
+  async function create(e: React.FormEvent) {
+    e.preventDefault();
+    setHint('');
+    const p = parseFloat(principal.replace(',', '.')) || 0;
+    const pct = parseFloat(pctCdi.replace(',', '.')) || 100;
+    const cdi = parseFloat(cdiAa.replace(',', '.')) || 10.5;
+    try {
+      await api.post('/cdb-applications', {
+        name,
+        institution: institution || undefined,
+        financialEntityId: formEntity || undefined,
+        principal: p,
+        applicationDate: new Date(applicationDate).toISOString(),
+        maturityDate: maturityDate ? new Date(maturityDate).toISOString() : undefined,
+        indexerPercentOfCdi: pct,
+        assumedCdiAnnualPercent: cdi,
+      });
+      setName('');
+      setInstitution('');
+      setPrincipal('');
+      setMaturityDate('');
+      await load();
+      setProjTick((t) => t + 1);
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 400) {
+        setHint(apiErrorMessage(err.response?.data));
+      } else {
+        setHint('Erro ao salvar.');
+      }
+    }
+  }
+
+  const chartData = proj.map((m) => ({
+    month: m.month,
+    líquido: m.totalNet,
+    bruto: m.totalGross,
+    ir: m.totalIr,
+  }));
+
+  return (
+    <div className="space-y-6 pb-4">
+      <div>
+        <h1 className="text-xl font-semibold md:text-2xl">CDB (% CDI)</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Cadastre aplicações em CDB com rendimento em <strong>% do CDI</strong> (ex.: 100% ou 110%). A projeção usa o{' '}
+          <strong>CDI anual assumido</strong> por aplicação, capitalização equivalente a 365 dias, e o{' '}
+          <strong>IR regressivo</strong> sobre o ganho (22,5% até 180 dias; 20% até 360; 17,5% até 720; 15% acima).
+        </p>
+      </div>
+
+      {hint && (
+        <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {hint}
+        </p>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Nova aplicação</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={create} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-2">
+              <Label>Entidade (opcional)</Label>
+              <select
+                className="min-h-11 w-full rounded-md border border-input bg-card px-3 py-2 text-base md:text-sm touch-manipulation"
+                value={formEntity}
+                onChange={(e) => setFormEntity(e.target.value)}
+              >
+                <option value="">—</option>
+                {entities.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Nome / título do CDB</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Ex.: CDB Liquidez Diária" />
+            </div>
+            <div className="space-y-2">
+              <Label>Banco / emissor</Label>
+              <Input value={institution} onChange={(e) => setInstitution(e.target.value)} placeholder="Opcional" />
+            </div>
+            <div className="space-y-2">
+              <Label>Valor aplicado (R$)</Label>
+              <Input value={principal} onChange={(e) => setPrincipal(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Data da aplicação</Label>
+              <Input type="date" value={applicationDate} onChange={(e) => setApplicationDate(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Vencimento (opcional)</Label>
+              <Input type="date" value={maturityDate} onChange={(e) => setMaturityDate(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>% do CDI</Label>
+              <Input value={pctCdi} onChange={(e) => setPctCdi(e.target.value)} required placeholder="100 ou 110" />
+            </div>
+            <div className="space-y-2">
+              <Label>CDI anual assumido (% a.a.)</Label>
+              <Input value={cdiAa} onChange={(e) => setCdiAa(e.target.value)} required placeholder="Ex.: 10,5" />
+            </div>
+            <div className="flex items-end sm:col-span-2 lg:col-span-1">
+              <Button type="submit" className="min-h-11 w-full touch-manipulation sm:w-auto">
+                Salvar aplicação
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="text-base">Projeção 5 anos (ativas)</CardTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <Label className="text-muted-foreground">Filtrar entidade</Label>
+            <select
+              className="min-h-10 rounded-md border border-input bg-card px-2 py-1 text-sm"
+              value={entityId}
+              onChange={(e) => setEntityId(e.target.value)}
+            >
+              <option value="">Todas</option>
+              {entities.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {lastNet != null && (
+            <p className="text-sm">
+              No <strong>último mês</strong> da projeção (60º mês), patrimônio líquido estimado:{' '}
+              <strong className="text-primary">{brl(lastNet)}</strong>
+            </p>
+          )}
+          <div className="h-72 w-full md:h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(217 33% 20%)" />
+                <XAxis dataKey="month" tick={{ fill: 'hsl(215 20% 65%)', fontSize: 10 }} interval={5} />
+                <YAxis tick={{ fill: 'hsl(215 20% 65%)', fontSize: 10 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                <Tooltip
+                  formatter={(v: number) => brl(v)}
+                  contentStyle={{ background: 'hsl(222 40% 10%)', border: '1px solid hsl(217 33% 20%)' }}
+                />
+                <Legend />
+                <Line type="monotone" dataKey="líquido" name="Líquido (após IR)" stroke="hsl(199 89% 48%)" dot={false} strokeWidth={2} />
+                <Line type="monotone" dataKey="bruto" name="Bruto" stroke="hsl(172 66% 40%)" dot={false} strokeWidth={1} />
+                <Line type="monotone" dataKey="ir" name="IR (acum.)" stroke="hsl(0 72% 51%)" dot={false} strokeWidth={1} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-xs text-muted-foreground">{methodology}</p>
+          <div className="max-h-80 overflow-auto rounded-md border border-border md:max-h-96">
+            <Table>
+              <THead>
+                <TR>
+                  <TH>Mês</TH>
+                  <TH className="text-right">Principal</TH>
+                  <TH className="text-right">Bruto</TH>
+                  <TH className="text-right">Ganho</TH>
+                  <TH className="text-right">IR</TH>
+                  <TH className="text-right">Líquido</TH>
+                </TR>
+              </THead>
+              <TBody>
+                {proj.map((m) => (
+                  <TR key={m.month}>
+                    <TD>{m.month}</TD>
+                    <TD className="text-right">{brl(m.totalPrincipal)}</TD>
+                    <TD className="text-right">{brl(m.totalGross)}</TD>
+                    <TD className="text-right">{brl(m.totalGain)}</TD>
+                    <TD className="text-right">{brl(m.totalIr)}</TD>
+                    <TD className="text-right font-medium">{brl(m.totalNet)}</TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Aplicações cadastradas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="hidden md:block">
+            <Table>
+              <THead>
+                <TR>
+                  <TH>Nome</TH>
+                  <TH>Banco</TH>
+                  <TH>Entidade</TH>
+                  <TH className="text-right">Principal</TH>
+                  <TH>% CDI</TH>
+                  <TH>CDI a.a.</TH>
+                  <TH>Aplicação</TH>
+                  <TH>Ativo</TH>
+                </TR>
+              </THead>
+              <TBody>
+                {rows.map((r) => (
+                  <TR key={r.id}>
+                    <TD>{r.name}</TD>
+                    <TD>{r.institution ?? '—'}</TD>
+                    <TD>{r.financialEntity?.name ?? '—'}</TD>
+                    <TD className="text-right">{brl(parseFloat(r.principal))}</TD>
+                    <TD>{r.indexerPercentOfCdi}%</TD>
+                    <TD>{r.assumedCdiAnnualPercent}%</TD>
+                    <TD>{r.applicationDate.slice(0, 10)}</TD>
+                    <TD>{r.active ? 'Sim' : 'Não'}</TD>
+                  </TR>
+                ))}
+              </TBody>
+            </Table>
+          </div>
+          <ul className="space-y-2 md:hidden">
+            {rows.map((r) => (
+              <li key={r.id} className="rounded-lg border border-border px-3 py-3 text-sm">
+                <p className="font-medium">{r.name}</p>
+                <p className="text-muted-foreground">
+                  {r.institution ?? '—'} · {r.indexerPercentOfCdi}% CDI · CDI {r.assumedCdiAnnualPercent}% a.a.
+                </p>
+                <p className="mt-1">{brl(parseFloat(r.principal))}</p>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

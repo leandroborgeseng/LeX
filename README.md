@@ -21,6 +21,7 @@ docker/
 apps/
   api/            → NestJS + Prisma + public/ (SPA após pnpm build na raiz)
   web/            → React + Vite + Tailwind
+  (API) cdb-applications → CDB indexado a % do CDI + projeção / IR regressivo
 Dockerfile        → imagem única (API + estáticos + SQLite em /data)
 docker-compose.yml → um serviço `app`, volume `lex_sqlite` → /data
 ```
