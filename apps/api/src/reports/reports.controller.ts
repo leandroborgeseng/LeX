@@ -35,6 +35,14 @@ export class ReportsController {
     );
   }
 
+  @Get('dre-monthly')
+  dreMonthly(
+    @Query('scope') scope: EntityScope = 'CONSOLIDADO',
+    @Query('year') year = `${new Date().getFullYear()}`,
+  ) {
+    return this.svc.dreMonthly(scope, parseInt(year, 10));
+  }
+
   @Get('expenses-by-category')
   expCat(
     @Query('scope') scope: EntityScope = 'CONSOLIDADO',

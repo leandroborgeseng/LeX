@@ -59,6 +59,39 @@ export class DashboardService {
     const ePf = Number(expPf._sum.amount ?? 0);
     const ePj = Number(expPj._sum.amount ?? 0);
 
+    const yearStart = new Date(y, 0, 1);
+    const yearEnd = new Date(y, 11, 31, 23, 59, 59, 999);
+    const revYearWhere = {
+      competenceDate: { gte: yearStart, lte: yearEnd },
+      status: { in: [RevenueStatus.PREVISTO, RevenueStatus.RECEBIDO, RevenueStatus.ATRASADO] },
+    };
+    const expYearWhere = {
+      competenceDate: { gte: yearStart, lte: yearEnd },
+      status: { in: [ExpenseStatus.PREVISTO, ExpenseStatus.PAGO, ExpenseStatus.ATRASADO] },
+    };
+    const [revYrPf, revYrPj, expYrPf, expYrPj] = await Promise.all([
+      this.prisma.revenue.aggregate({
+        where: { ...revYearWhere, financialEntityId: { in: pfIds } },
+        _sum: { netAmount: true },
+      }),
+      this.prisma.revenue.aggregate({
+        where: { ...revYearWhere, financialEntityId: { in: pjIds } },
+        _sum: { netAmount: true },
+      }),
+      this.prisma.expense.aggregate({
+        where: { ...expYearWhere, financialEntityId: { in: pfIds } },
+        _sum: { amount: true },
+      }),
+      this.prisma.expense.aggregate({
+        where: { ...expYearWhere, financialEntityId: { in: pjIds } },
+        _sum: { amount: true },
+      }),
+    ]);
+    const ryPf = Number(revYrPf._sum.netAmount ?? 0);
+    const ryPj = Number(revYrPj._sum.netAmount ?? 0);
+    const eyPf = Number(expYrPf._sum.amount ?? 0);
+    const eyPj = Number(expYrPj._sum.amount ?? 0);
+
     const horizon = new Date();
     horizon.setDate(horizon.getDate() + 30);
     const [upcomingRev, upcomingExp, contracts, financingsAgg, cards] = await Promise.all([
@@ -118,6 +151,14 @@ export class DashboardService {
         pf: rPf - ePf,
         pj: rPj - ePj,
         consolidated: rPf + rPj - ePf - ePj,
+      },
+      annualYear: y,
+      revenuesYear: { pf: ryPf, pj: ryPj, consolidated: ryPf + ryPj },
+      expensesYear: { pf: eyPf, pj: eyPj, consolidated: eyPf + eyPj },
+      resultYear: {
+        pf: ryPf - eyPf,
+        pj: ryPj - eyPj,
+        consolidated: ryPf + ryPj - eyPf - eyPj,
       },
       upcoming: { revenues: upcomingRev, expenses: upcomingExp },
       activeContracts: contracts,

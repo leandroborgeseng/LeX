@@ -17,9 +17,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 type Summary = {
   balances: { pf: number; pj: number; consolidated: number };
+  month: { year: number; month: number };
   revenuesMonth: { pf: number; pj: number; consolidated: number };
   expensesMonth: { pf: number; pj: number; consolidated: number };
   resultForecast: { pf: number; pj: number; consolidated: number };
+  annualYear: number;
+  revenuesYear: { pf: number; pj: number; consolidated: number };
+  expensesYear: { pf: number; pj: number; consolidated: number };
+  resultYear: { pf: number; pj: number; consolidated: number };
   financingOutstanding: number;
   charts: {
     cashflow12m: { year: number; month: number; net: number; inflow: number; outflow: number }[];
@@ -84,10 +89,60 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Receita total no ano ({s.annualYear})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold text-primary">{brl(s.revenuesYear.consolidated)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              PF {brl(s.revenuesYear.pf)} · PJ {brl(s.revenuesYear.pj)}
+            </p>
+            <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+              Competência no ano civil; previsto + recebido + atrasado.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Despesa total no ano ({s.annualYear})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold text-accent">{brl(s.expensesYear.consolidated)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              PF {brl(s.expensesYear.pf)} · PJ {brl(s.expensesYear.pj)}
+            </p>
+            <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+              Competência no ano civil; previsto + pago + atrasado.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Resultado no ano ({s.annualYear})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">{brl(s.resultYear.consolidated)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              PF {brl(s.resultYear.pf)} · PJ {brl(s.resultYear.pj)}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="text-base">Mês atual</CardTitle>
+            <CardTitle className="text-base">
+              Mês atual ({s.month.month}/{s.month.year})
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between">

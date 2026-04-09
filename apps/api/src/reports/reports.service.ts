@@ -53,11 +53,8 @@ export class ReportsService {
     return { period: { year, month }, revenues: rev, expenses: exp, totalRev, totalExp, net: totalRev - totalExp };
   }
 
-  async dreSimplified(scope: EntityScope, from: string, to: string) {
+  private async dreAggregate(scope: EntityScope, start: Date, end: Date) {
     const ids = await this.entityIds(scope);
-    const start = new Date(from);
-    const end = new Date(to);
-
     const [rev, exp] = await Promise.all([
       this.prisma.revenue.aggregate({
         where: {
@@ -77,19 +74,68 @@ export class ReportsService {
       }),
     ]);
 
-    const receita = Number(rev._sum.netAmount ?? 0);
+    const receitaLiquida = Number(rev._sum.netAmount ?? 0);
     const despesas = Number(exp._sum.amount ?? 0);
     return {
-      scope,
-      from,
-      to,
-      receitaLiquida: receita,
+      receitaLiquida,
       despesas,
-      resultado: receita - despesas,
+      resultado: receitaLiquida - despesas,
       detalhe: {
         receitaBruta: Number(rev._sum.grossAmount ?? 0),
         impostosDescontos: Number(rev._sum.taxDiscount ?? 0),
       },
+    };
+  }
+
+  async dreSimplified(scope: EntityScope, from: string, to: string) {
+    const start = new Date(from);
+    const end = new Date(to);
+    const core = await this.dreAggregate(scope, start, end);
+    return {
+      scope,
+      from,
+      to,
+      ...core,
+    };
+  }
+
+  /** DRE por mês (competência), alinhada à DRE simplificada (receita prevista/recebida; despesa prevista/paga). */
+  async dreMonthly(scope: EntityScope, year: number) {
+    const months: {
+      month: number;
+      monthKey: string;
+      receitaLiquida: number;
+      despesas: number;
+      resultado: number;
+      detalhe: { receitaBruta: number; impostosDescontos: number };
+    }[] = [];
+    let sumR = 0;
+    let sumE = 0;
+    for (let m = 1; m <= 12; m++) {
+      const start = new Date(year, m - 1, 1);
+      const end = endOfMonth(start);
+      const row = await this.dreAggregate(scope, start, end);
+      sumR += row.receitaLiquida;
+      sumE += row.despesas;
+      months.push({
+        month: m,
+        monthKey: `${year}-${String(m).padStart(2, '0')}`,
+        receitaLiquida: row.receitaLiquida,
+        despesas: row.despesas,
+        resultado: row.resultado,
+        detalhe: row.detalhe,
+      });
+    }
+    return {
+      scope,
+      year,
+      months,
+      totals: {
+        receitaLiquida: sumR,
+        despesas: sumE,
+        resultado: sumR - sumE,
+      },
+      nota: 'Receitas: PREVISTO + RECEBIDO. Despesas: PREVISTO + PAGO (competência em cada mês).',
     };
   }
 
