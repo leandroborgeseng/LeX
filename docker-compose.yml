@@ -1,0 +1,31 @@
+# Um único container: API Nest + SPA estática + SQLite em volume.
+# Build: raiz do monorepo (web → dist copiado para apps/api/public no pnpm build).
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lex-finance:local
+    ports:
+      - "${LEX_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      JWT_SECRET: ${LEX_JWT_SECRET:-change-me-docker-compose}
+    volumes:
+      - lex_sqlite:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  lex_sqlite:

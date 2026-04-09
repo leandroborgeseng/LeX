@@ -1,14 +1,23 @@
-# Monorepo: API + frontend. SQLite em /data/app.db
-# Copia `apps/` ANTES do `pnpm install` para existir `apps/api/prisma/schema.prisma` durante os postinstalls (Prisma/esbuild).
+# =============================================================================
+# LeX — container único (produção)
+#   1) Build do Vite (apps/web) → dist
+#   2) Build do Nest (apps/api) + copy-frontend → public/
+#   3) Runtime: um processo Node em PORT (API /api + SPA na raiz), SQLite em /data
+# =============================================================================
 FROM node:20-alpine
 
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9.14.2 --activate
 
+COPY docker/entrypoint.sh /usr/local/bin/lex-entrypoint.sh
+RUN chmod +x /usr/local/bin/lex-entrypoint.sh
+
+# Manifestos do workspace
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+
+# apps/ ANTES do install: Prisma schema precisa existir no postinstall/generate
 COPY apps ./apps
-RUN chmod +x /app/apps/api/scripts/docker-entrypoint.sh
 
 RUN pnpm install --frozen-lockfile
 
@@ -25,4 +34,4 @@ WORKDIR /app/apps/api
 
 EXPOSE 3000
 
-ENTRYPOINT ["/app/apps/api/scripts/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/lex-entrypoint.sh"]

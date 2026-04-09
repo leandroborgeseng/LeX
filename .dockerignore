@@ -3,6 +3,9 @@ node_modules
 dist
 **/dist
 .git
+.github
+.cursor
+.vscode
 .env
 .env.*
 *.db
@@ -11,3 +14,4 @@ apps/api/dev.db
 apps/api/public
 .DS_Store
 coverage
+**/.turbo

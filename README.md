@@ -14,10 +14,13 @@ Monorepo **full stack** para controle financeiro **pessoal (PF)** e **empresaria
 ## Estrutura
 
 ```
+docker/
+  entrypoint.sh   → arranque do container (migrações + node dist/main)
 apps/
-  api/     → NestJS + Prisma + pasta public/ (frontend build em produção)
-  web/     → React + Vite + Tailwind
-prisma/    → (schema em apps/api/prisma)
+  api/            → NestJS + Prisma + public/ (SPA após pnpm build na raiz)
+  web/            → React + Vite + Tailwind
+Dockerfile        → imagem única (API + estáticos + SQLite em /data)
+docker-compose.yml → um serviço `app`, volume `lex_sqlite` → /data
 ```
 
 ## Pré-requisitos
@@ -86,24 +89,37 @@ prisma/    → (schema em apps/api/prisma)
 
    Abra http://localhost:3000 — a SPA é servida na raiz e a API em `/api`.
 
-## Docker
+## Docker (container único)
 
-Build da imagem na raiz do projeto:
+Tudo corre num **só** processo Node: a API expõe `/api` e serve o build do Vite a partir de `apps/api/public` (preenchido pelo `pnpm build` na imagem).
+
+**Na raiz do repositório:**
+
+| Comando | Descrição |
+|--------|-----------|
+| `pnpm docker:build` | `docker build -t lex-finance .` |
+| `pnpm docker:up` | `docker compose up --build` (porta host `LEX_PORT`, default 3000) |
+| `pnpm docker:run` | `docker run` rápido com volume `lex_sqlite` |
+
+Compose (recomendado para local):
+
+```bash
+pnpm docker:up
+# ou: LEX_PORT=8080 LEX_JWT_SECRET=minha-chave docker compose up --build
+```
+
+Manual:
 
 ```bash
 docker build -t lex-finance .
-```
-
-Execução:
-
-```bash
 docker run -p 3000:3000 -e JWT_SECRET=sua-chave -v lex_data:/data lex-finance
 ```
 
-- `PORT` pode ser sobrescrito (Railway injeta `PORT`).
+- `PORT` pode ser sobrescrito (Railway injeta `PORT`); dentro do Compose o serviço usa `3000` interno.
 - SQLite persistente: `DATABASE_URL=file:/data/app.db` (padrão na imagem). Monte um volume em **`/data`**.
+- Entrypoint: `docker/entrypoint.sh` (copiado para `/usr/local/bin/lex-entrypoint.sh` na imagem).
 
-Na primeira subida, rode o seed **uma vez** (com o container em execução ou `docker run` com comando alternativo):
+Na primeira subida, rode o seed **uma vez**:
 
 ```bash
 docker exec -it <container> sh -c "cd /app/apps/api && npx prisma db seed"
@@ -147,6 +163,9 @@ docker exec -it <container> sh -c "cd /app/apps/api && npx prisma db seed"
 | `pnpm db:migrate`  | `prisma migrate deploy` (CI/prod)         |
 | `pnpm db:push`     | `prisma db push` (apenas dev)             |
 | `pnpm db:seed`     | Executa o seed                            |
+| `pnpm docker:build` | Imagem Docker única na raiz            |
+| `pnpm docker:up`   | Compose: um serviço `app` + volume SQLite |
+| `pnpm docker:run`  | `docker run` com volume nomeado         |
 
 ## Regras de negócio principais (API)
 
