@@ -1,4 +1,5 @@
-# Monorepo: build frontend + NestJS; API serve estáticos e SQLite em /data/app.db
+# Monorepo: API + frontend. SQLite em /data/app.db
+# Copia `apps/` ANTES do `pnpm install` para existir `apps/api/prisma/schema.prisma` durante os postinstalls (Prisma/esbuild).
 FROM node:20-alpine
 
 WORKDIR /app
@@ -6,14 +7,9 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.14.2 --activate
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY scripts/docker-postinstall.cjs scripts/docker-postinstall.cjs
-COPY apps/api/package.json apps/api/
-COPY apps/web/package.json apps/web/
-
-# postinstall na raiz só gera Prisma se apps/api/prisma/schema.prisma já existir (no estágio inicial, não existe)
-RUN pnpm install --frozen-lockfile
-
 COPY apps ./apps
+
+RUN pnpm install --frozen-lockfile
 
 RUN pnpm --filter @lex/api exec prisma generate --schema=prisma/schema.prisma
 

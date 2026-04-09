@@ -31,7 +31,10 @@ prisma/    → (schema em apps/api/prisma)
 
    ```bash
    pnpm install
+   pnpm db:generate
    ```
+
+   > No Docker, o `COPY apps` ocorre **antes** do `pnpm install`, então o schema Prisma já existe no install. **Localmente**, após o primeiro `pnpm install`, rode `pnpm db:generate` se o client ainda não foi gerado.
 
 2. Crie `apps/api/.env` (veja `apps/api/.env.example`):
 
@@ -114,6 +117,7 @@ docker exec -it <container> sh -c "cd /app/apps/api && npx prisma db seed"
 - Em **Settings → Root Directory**, deixe **vazio** (raiz do repo). Se estiver `apps/web`, o build pode usar contexto errado e falhar ou ficar desatualizado.
 - Garanta que o deploy use o branch **`main`** (ou o branch onde você fez push das correções do Docker). Após mudanças no `Dockerfile`, use **Redeploy** (e, se existir, limpe cache de build).
 - A mensagem **subscription is past due** é cobrança da conta Railway: regularize o pagamento ou os deploys podem falhar.
+- O **`Dockerfile` copia `apps/` antes de `pnpm install`**, para o schema em `apps/api/prisma` existir durante o install (evita o erro `Could not find Prisma Schema` em builds antigos em cache).
 
 1. Crie um projeto e conecte o repositório (ou use CLI).
 2. Adicione um **volume** montado em **`/data`** para persistir o SQLite.
