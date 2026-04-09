@@ -128,7 +128,6 @@ export default function Receitas() {
 
   return (
     <div className="space-y-6 pb-2">
-      <h1 className="text-xl font-semibold md:text-2xl">Receitas</h1>
       {listFilter === 'proximos' && (
         <div className="flex flex-col gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
           <span>

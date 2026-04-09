@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import type { LucideIcon } from 'lucide-react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
+  Banknote,
   CreditCard,
   LayoutDashboard,
   LayoutGrid,
   LogOut,
-  Repeat,
   Users,
-  Wallet,
   FileText,
   Briefcase,
   Landmark,
@@ -21,27 +21,88 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { OfflineBar } from '@/components/layout/OfflineBar';
 
-const nav = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+type NavItem = {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  end?: boolean;
+  /** Destaca o item quando o path começa com este prefixo (ex.: /movimentos). */
+  matchPrefix?: string;
+};
+
+const nav: NavItem[] = [
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/estrutura', label: 'Estrutura', icon: LayoutGrid },
-  { to: '/receitas', label: 'Receitas', icon: Wallet },
-  { to: '/despesas', label: 'Despesas', icon: Repeat },
+  { to: '/movimentos/receitas', label: 'Movimentos', icon: Banknote, matchPrefix: '/movimentos' },
   { to: '/contratos', label: 'Contratos', icon: Briefcase },
   { to: '/funcionarios', label: 'Folha / funcionários', icon: Users },
   { to: '/financiamentos', label: 'Financiamentos', icon: Landmark },
   { to: '/transferencias', label: 'Transferências internas', icon: ArrowLeftRight },
-  { to: '/cartao-lancamentos', label: 'Lançamentos no cartão', icon: CreditCard },
+  { to: '/cartoes', label: 'Cartões', icon: CreditCard, matchPrefix: '/cartoes' },
   { to: '/relatorios', label: 'Relatórios', icon: FileText },
   { to: '/cdb', label: 'CDB / CDI', icon: TrendingUp },
   { to: '/projecoes', label: 'Projeções', icon: LineChart },
 ];
 
-const bottomNav = [
+const bottomNav: NavItem[] = [
   { to: '/', label: 'Início', icon: LayoutDashboard, end: true },
-  { to: '/receitas', label: 'Receitas', icon: Wallet },
-  { to: '/despesas', label: 'Despesas', icon: Repeat },
+  { to: '/movimentos/receitas', label: 'Movimentos', icon: Banknote, matchPrefix: '/movimentos' },
   { to: '/relatorios', label: 'Relatórios', icon: FileText },
 ];
+
+function ShellNavLink({
+  item,
+  className,
+  onClick,
+  iconClassName = 'h-4 w-4 shrink-0',
+}: {
+  item: NavItem;
+  className: (active: boolean) => string;
+  onClick?: () => void;
+  iconClassName?: string;
+}) {
+  const location = useLocation();
+  const prefixActive = item.matchPrefix ? location.pathname.startsWith(item.matchPrefix) : null;
+  return (
+    <NavLink
+      to={item.to}
+      end={item.end ?? false}
+      onClick={onClick}
+      className={({ isActive }) => className(prefixActive !== null ? prefixActive : isActive)}
+    >
+      <item.icon className={iconClassName} />
+      {item.label}
+    </NavLink>
+  );
+}
+
+function ShellNavLinkBottom({
+  item,
+  onClick,
+}: {
+  item: NavItem;
+  onClick?: () => void;
+}) {
+  const location = useLocation();
+  const prefixActive = item.matchPrefix ? location.pathname.startsWith(item.matchPrefix) : null;
+  return (
+    <NavLink
+      to={item.to}
+      end={item.end ?? false}
+      onClick={onClick}
+      className={({ isActive }) => {
+        const on = prefixActive !== null ? prefixActive : isActive;
+        return cn(
+          'flex min-h-[3.25rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1 text-[10px] font-medium touch-manipulation',
+          on ? 'text-primary' : 'text-muted-foreground',
+        );
+      }}
+    >
+      <item.icon className="h-5 w-5 shrink-0" />
+      <span className="truncate">{item.label}</span>
+    </NavLink>
+  );
+}
 
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -59,20 +120,16 @@ export function AppShell() {
         </div>
         <nav className="max-h-[calc(100vh-7rem)] space-y-0.5 overflow-y-auto p-2">
           {nav.map((item) => (
-            <NavLink
+            <ShellNavLink
               key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) =>
+              item={item}
+              className={(active) =>
                 cn(
                   'flex min-h-[44px] items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted touch-manipulation',
-                  isActive && 'bg-primary/15 text-primary',
+                  active && 'bg-primary/15 text-primary',
                 )
               }
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              {item.label}
-            </NavLink>
+            />
           ))}
         </nav>
         <div className="absolute bottom-0 hidden w-60 border-t border-border p-2 md:block">
@@ -115,21 +172,18 @@ export function AppShell() {
             </div>
             <nav className="flex-1 overflow-y-auto p-2">
               {nav.map((item) => (
-                <NavLink
+                <ShellNavLink
                   key={item.to}
-                  to={item.to}
-                  end={item.to === '/'}
+                  item={item}
+                  iconClassName="h-5 w-5 shrink-0"
                   onClick={() => setMenuOpen(false)}
-                  className={({ isActive }) =>
+                  className={(active) =>
                     cn(
                       'flex min-h-[48px] items-center gap-3 rounded-lg px-4 py-3 text-base transition-colors hover:bg-muted touch-manipulation',
-                      isActive && 'bg-primary/15 text-primary',
+                      active && 'bg-primary/15 text-primary',
                     )
                   }
-                >
-                  <item.icon className="h-5 w-5 shrink-0" />
-                  {item.label}
-                </NavLink>
+                />
               ))}
             </nav>
           </DialogContent>
@@ -147,20 +201,7 @@ export function AppShell() {
           aria-label="Navegação principal"
         >
           {bottomNav.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                cn(
-                  'flex min-h-[3.25rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1 text-[10px] font-medium touch-manipulation',
-                  isActive ? 'text-primary' : 'text-muted-foreground',
-                )
-              }
-            >
-              <item.icon className="h-5 w-5 shrink-0" />
-              <span className="truncate">{item.label}</span>
-            </NavLink>
+            <ShellNavLinkBottom key={item.to} item={item} />
           ))}
           <button
             type="button"

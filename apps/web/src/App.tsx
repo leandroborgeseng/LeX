@@ -11,6 +11,8 @@ import Categorias from '@/pages/Categorias';
 import Fontes from '@/pages/Fontes';
 import Receitas from '@/pages/Receitas';
 import Despesas from '@/pages/Despesas';
+import MovimentosLayout from '@/pages/MovimentosLayout';
+import { RedirectToMovimentosDespesas, RedirectToMovimentosReceitas } from '@/routes/redirects';
 import Contratos from '@/pages/Contratos';
 import Funcionarios from '@/pages/Funcionarios';
 import Financiamentos from '@/pages/Financiamentos';
@@ -44,16 +46,22 @@ export default function App() {
           <Route path="/entidades" element={<Entidades />} />
           <Route path="/contas" element={<Contas />} />
           <Route path="/cartoes" element={<Cartoes />} />
+          <Route path="/cartoes/:cardId" element={<CartaoLancamentos />} />
           <Route path="/membros" element={<Membros />} />
           <Route path="/categorias" element={<Categorias />} />
           <Route path="/fontes" element={<Fontes />} />
-          <Route path="/receitas" element={<Receitas />} />
-          <Route path="/despesas" element={<Despesas />} />
+          <Route path="/movimentos" element={<MovimentosLayout />}>
+            <Route index element={<Navigate to="receitas" replace />} />
+            <Route path="receitas" element={<Receitas />} />
+            <Route path="despesas" element={<Despesas />} />
+          </Route>
+          <Route path="/receitas" element={<RedirectToMovimentosReceitas />} />
+          <Route path="/despesas" element={<RedirectToMovimentosDespesas />} />
           <Route path="/contratos" element={<Contratos />} />
           <Route path="/funcionarios" element={<Funcionarios />} />
           <Route path="/financiamentos" element={<Financiamentos />} />
           <Route path="/transferencias" element={<Transferencias />} />
-          <Route path="/cartao-lancamentos" element={<CartaoLancamentos />} />
+          <Route path="/cartao-lancamentos" element={<Navigate to="/cartoes" replace />} />
           <Route path="/relatorios" element={<Relatorios />} />
           <Route path="/cdb" element={<Cdb />} />
           <Route path="/projecoes" element={<Projecoes />} />

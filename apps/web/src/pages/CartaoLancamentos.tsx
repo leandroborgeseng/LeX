@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import api from '@/lib/api';
-import { brl, formatDateBr } from '@/lib/format';
+import { brl, formatDateBr, todayDateInputValue } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +22,8 @@ type Tx = {
 };
 
 export default function CartaoLancamentos() {
+  const { cardId: cardIdParam } = useParams<{ cardId: string }>();
+
   const [entities, setEntities] = useState<Entity[]>([]);
   const [cards, setCards] = useState<CardRow[]>([]);
   const [cats, setCats] = useState<Cat[]>([]);
@@ -32,10 +35,11 @@ export default function CartaoLancamentos() {
   const [financialEntityId, setFinancialEntityId] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [purchaseDate, setPurchaseDate] = useState('');
+  const [purchaseDate, setPurchaseDate] = useState(() => todayDateInputValue());
   const [installments, setInstallments] = useState('1');
   const [categoryId, setCategoryId] = useState('');
   const [originatorId, setOriginatorId] = useState('');
+  const [refsReady, setRefsReady] = useState(false);
 
   async function loadRefs() {
     const [e, c, cat, m] = await Promise.all([
@@ -48,11 +52,14 @@ export default function CartaoLancamentos() {
     setCards(c.data);
     setCats(cat.data);
     setMembers(m.data);
-    if (!creditCardId && c.data[0]) {
-      setCreditCardId(c.data[0].id);
-      setSelectedCard(c.data[0].id);
-      setFinancialEntityId(c.data[0].financialEntityId);
+
+    const match = c.data.find((x) => x.id === cardIdParam);
+    if (match) {
+      setCreditCardId(match.id);
+      setSelectedCard(match.id);
+      setFinancialEntityId(match.financialEntityId);
     }
+    setRefsReady(true);
   }
 
   async function loadInvoices(cardId: string) {
@@ -63,8 +70,9 @@ export default function CartaoLancamentos() {
   }
 
   useEffect(() => {
-    loadRefs();
-  }, []);
+    setRefsReady(false);
+    void loadRefs();
+  }, [cardIdParam]);
 
   useEffect(() => {
     if (selectedCard) loadInvoices(selectedCard);
@@ -84,36 +92,51 @@ export default function CartaoLancamentos() {
     });
     setDescription('');
     setAmount('');
+    setPurchaseDate(todayDateInputValue());
     await loadInvoices(creditCardId);
   }
 
+  if (!cardIdParam) {
+    return <Navigate to="/cartoes" replace />;
+  }
+
+  const currentCard = cards.find((x) => x.id === cardIdParam);
+  const cardMissing = refsReady && !currentCard;
+
+  if (cardMissing) {
+    return (
+      <div className="space-y-4">
+        <p className="text-muted-foreground">Cartão não encontrado.</p>
+        <Button asChild variant="outline">
+          <Link to="/cartoes">Voltar aos cartões</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const titleName = currentCard?.name ?? 'Cartão';
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Lançamentos no cartão</h1>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <Button asChild variant="ghost" size="sm" className="-ml-2 mb-1 h-auto px-2 py-1 text-muted-foreground touch-manipulation">
+            <Link to="/cartoes">← Cartões</Link>
+          </Button>
+          <h1 className="text-2xl font-semibold">{titleName}</h1>
+          <p className="text-sm text-muted-foreground">Compras parceladas e extrato consolidado deste cartão.</p>
+        </div>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Nova compra / parcelada</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={create} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2 lg:col-span-3">
               <Label>Cartão</Label>
-              <select
-                className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm"
-                value={creditCardId}
-                onChange={(e) => {
-                  const id = e.target.value;
-                  setCreditCardId(id);
-                  const c = cards.find((x) => x.id === id);
-                  if (c) setFinancialEntityId(c.financialEntityId);
-                }}
-              >
-                {cards.map((x) => (
-                  <option key={x.id} value={x.id}>
-                    {x.name}
-                  </option>
-                ))}
-              </select>
+              <p className="text-sm font-medium text-foreground">{titleName}</p>
             </div>
             <div className="space-y-2">
               <Label>Entidade (PF/PJ do cartão)</Label>
@@ -183,23 +206,9 @@ export default function CartaoLancamentos() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Extrato por cartão (faturas consolidadas)</CardTitle>
+          <CardTitle className="text-base">Extrato (faturas consolidadas)</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Filtrar cartão</Label>
-            <select
-              className="h-10 max-w-md rounded-md border border-input bg-card px-3 text-sm"
-              value={selectedCard}
-              onChange={(e) => setSelectedCard(e.target.value)}
-            >
-              {cards.map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <CardContent>
           <Table>
             <THead>
               <TR>

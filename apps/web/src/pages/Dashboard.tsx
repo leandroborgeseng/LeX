@@ -70,16 +70,16 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button asChild variant="default" className="touch-manipulation">
-            <Link to="/receitas">+ Nova receita</Link>
+            <Link to="/movimentos/receitas">+ Nova receita</Link>
           </Button>
           <Button asChild variant="secondary" className="touch-manipulation">
-            <Link to="/despesas">+ Nova despesa</Link>
+            <Link to="/movimentos/despesas">+ Nova despesa</Link>
           </Button>
           <Button asChild variant="outline" className="touch-manipulation">
-            <Link to="/receitas?filter=proximos">Receitas a vencer (30 dias)</Link>
+            <Link to="/movimentos/receitas?filter=proximos">Receitas a vencer (30 dias)</Link>
           </Button>
           <Button asChild variant="outline" className="touch-manipulation">
-            <Link to="/despesas?filter=proximos">Despesas a vencer (30 dias)</Link>
+            <Link to="/movimentos/despesas?filter=proximos">Despesas a vencer (30 dias)</Link>
           </Button>
           <Button asChild variant="ghost" className="touch-manipulation">
             <Link to="/estrutura">Estrutura / cadastros</Link>

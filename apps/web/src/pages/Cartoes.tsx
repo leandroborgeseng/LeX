@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '@/lib/api';
 import { brl } from '@/lib/format';
 import { Button } from '@/components/ui/button';
@@ -59,7 +60,12 @@ export default function Cartoes() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Cartões de crédito</h1>
+      <div>
+        <h1 className="text-2xl font-semibold">Cartões de crédito</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Toque no nome do cartão para lançar compras e ver o extrato consolidado.
+        </p>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Novo cartão</CardTitle>
@@ -124,7 +130,14 @@ export default function Cartoes() {
             <TBody>
               {rows.map((r) => (
                 <TR key={r.id}>
-                  <TD>{r.name}</TD>
+                  <TD>
+                    <Link
+                      to={`/cartoes/${r.id}`}
+                      className="font-medium text-primary underline-offset-4 hover:underline touch-manipulation"
+                    >
+                      {r.name}
+                    </Link>
+                  </TD>
                   <TD>{r.bank ?? '—'}</TD>
                   <TD>{r.limitAmount != null ? brl(parseFloat(r.limitAmount)) : '—'}</TD>
                   <TD>{r.closingDay ?? '—'}</TD>

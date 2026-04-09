@@ -26,7 +26,7 @@ const sections = [
   {
     to: '/cartoes',
     title: 'Cartões de crédito',
-    description: 'Cadastro de cartões, limites e datas de fechamento.',
+    description: 'Cadastro de cartões; no detalhe de cada um, lançamentos e extrato.',
     icon: CreditCard,
   },
   {
@@ -83,7 +83,8 @@ export default function Estrutura() {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Lançamentos no cartão e transferências continuam no menu principal, junto com receitas e despesas.
+        Transferências e movimentos (receitas/despesas) estão no menu principal; nos cartões, abra um cartão para
+        lançar compras.
       </p>
     </div>
   );
