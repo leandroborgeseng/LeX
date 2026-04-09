@@ -117,9 +117,9 @@ docker run -p 3000:3000 -e JWT_SECRET=sua-chave -v lex_data:/data lex-finance
 
 - `PORT` pode ser sobrescrito (Railway injeta `PORT`); dentro do Compose o serviço usa `3000` interno.
 - SQLite persistente: `DATABASE_URL=file:/data/app.db` (padrão na imagem). Monte um volume em **`/data`**.
-- Entrypoint: `docker/entrypoint.sh` (copiado para `/usr/local/bin/lex-entrypoint.sh` na imagem).
+- Entrypoint: `docker/entrypoint.sh` (copiado para `/usr/local/bin/lex-entrypoint.sh` na imagem). Se **não existir nenhum utilizador**, corre o seed automaticamente (`admin@lex.local` / `admin123`). Para desativar: `LEX_SKIP_AUTO_SEED=1`.
 
-Na primeira subida, rode o seed **uma vez**:
+Na primeira subida **fora** do Docker, ou se desativou o auto-seed, rode o seed **uma vez**:
 
 ```bash
 docker exec -it <container> sh -c "cd /app/apps/api && npx prisma db seed"

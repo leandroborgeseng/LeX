@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,8 +22,27 @@ export default function Login() {
       const { data } = await api.post('/auth/login', { email, password });
       localStorage.setItem('lex_token', data.access_token);
       nav('/');
-    } catch {
-      setErr('Falha no login. Verifique e-mail e senha.');
+    } catch (e) {
+      if (axios.isAxiosError(e)) {
+        const status = e.response?.status;
+        const raw = e.response?.data?.message;
+        const first = Array.isArray(raw) ? raw[0] : raw;
+        if (status === 401) {
+          setErr('E-mail ou senha incorretos. Se é o primeiro acesso, execute o seed da API (README).');
+        } else if (status === 400) {
+          setErr(
+            typeof first === 'string'
+              ? first
+              : 'Dados inválidos. Confirme o formato do e-mail.',
+          );
+        } else if (!e.response) {
+          setErr('Sem resposta do servidor. Em dev, confirme que a API está em :3000 e o proxy do Vite ativo.');
+        } else {
+          setErr('Não foi possível entrar. Tente de novo.');
+        }
+      } else {
+        setErr('Erro inesperado. Tente de novo.');
+      }
     } finally {
       setLoading(false);
     }

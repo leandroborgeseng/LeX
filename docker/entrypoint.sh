@@ -27,6 +27,19 @@ echo "LeX: DATABASE_URL=${DATABASE_URL}"
 echo "LeX: migrando…"
 npx prisma migrate deploy --schema=prisma/schema.prisma
 
+if [ "${LEX_SKIP_AUTO_SEED:-0}" != "1" ]; then
+  set +e
+  node scripts/auto-seed-if-empty.cjs
+  seed_check=$?
+  set -e
+  if [ "$seed_check" -eq 0 ]; then
+    echo "LeX: base sem utilizadores — a executar seed (admin@lex.local / admin123)…"
+    npx prisma db seed --schema=prisma/schema.prisma
+  elif [ "$seed_check" -ne 2 ]; then
+    echo "LeX: aviso — não foi possível verificar utilizadores (código $seed_check)." >&2
+  fi
+fi
+
 chmod -R a+rwX "$DATA_DIR" 2>/dev/null || true
 
 echo "LeX: iniciando API na porta ${PORT:-3000}…"
