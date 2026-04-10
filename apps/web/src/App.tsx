@@ -22,6 +22,7 @@ import Relatorios from '@/pages/Relatorios';
 import Projecoes from '@/pages/Projecoes';
 import Cdb from '@/pages/Cdb';
 import Estrutura from '@/pages/Estrutura';
+import Perfil from '@/pages/Perfil';
 import { PreferencesProvider } from '@/lib/preferences';
 
 function Protected({ children }: { children: ReactNode }) {
@@ -68,6 +69,7 @@ export default function App() {
           <Route path="/relatorios" element={<Relatorios />} />
           <Route path="/cdb" element={<Cdb />} />
           <Route path="/projecoes" element={<Projecoes />} />
+          <Route path="/perfil" element={<Perfil />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

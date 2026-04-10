@@ -32,6 +32,7 @@ export class ExpenseController {
     @Query('accountId') accountId?: string,
     @Query('cardId') cardId?: string,
     @Query('paymentMethod') paymentMethod?: PaymentMethod,
+    @Query('q') q?: string,
   ) {
     return this.svc.findAll({
       entityId,
@@ -43,6 +44,7 @@ export class ExpenseController {
       accountId,
       cardId,
       paymentMethod,
+      q,
     });
   }
 

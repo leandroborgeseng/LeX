@@ -28,6 +28,10 @@ echo "LeX: migrando…"
 npx prisma migrate deploy --schema=prisma/schema.prisma
 
 if [ "${LEX_SKIP_AUTO_SEED:-0}" != "1" ]; then
+  # Em produção, nunca executa auto-seed sem autorização explícita.
+  if [ "${NODE_ENV:-}" = "production" ] && [ "${LEX_ALLOW_AUTO_SEED_IN_PROD:-0}" != "1" ]; then
+    echo "LeX: auto-seed desativado em produção (defina LEX_ALLOW_AUTO_SEED_IN_PROD=1 apenas para bootstrap inicial)." >&2
+  else
   set +e
   node scripts/auto-seed-if-empty.cjs
   seed_check=$?
@@ -37,6 +41,7 @@ if [ "${LEX_SKIP_AUTO_SEED:-0}" != "1" ]; then
     npx prisma db seed --schema=prisma/schema.prisma
   elif [ "$seed_check" -ne 2 ]; then
     echo "LeX: aviso — não foi possível verificar utilizadores (código $seed_check)." >&2
+  fi
   fi
 fi
 

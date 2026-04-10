@@ -25,6 +25,7 @@ const ITEMS: CmdItem[] = [
   { to: '/membros', label: 'Membros / originadores' },
   { to: '/categorias', label: 'Categorias' },
   { to: '/fontes', label: 'Fontes pagadoras' },
+  { to: '/perfil', label: 'Minha conta / perfil', keywords: 'usuario senha email nome' },
 ];
 
 function normalize(s: string) {

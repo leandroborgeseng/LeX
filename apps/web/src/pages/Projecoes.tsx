@@ -20,9 +20,9 @@ export default function Projecoes() {
   const [cons, setCons] = useState<Row[]>([]);
 
   useEffect(() => {
-    api.get<{ months: Row[] }>('/projections/base?months=12').then((r) => setBase(r.data.months));
+    api.get<{ months: Row[] }>('/projections/base?months=60').then((r) => setBase(r.data.months));
     api
-      .get<{ months: Row[] }>('/projections/conservative?months=12')
+      .get<{ months: Row[] }>('/projections/conservative?months=60')
       .then((r) => setCons(r.data.months));
   }, []);
 
@@ -36,9 +36,9 @@ export default function Projecoes() {
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Projeções</h1>
       <p className="text-sm text-muted-foreground">
-        Saldo consolidado projetado mês a mês com base em receitas/despesas previstas cadastradas. Cenário
-        conservador aplica receitas −5% e despesas +5%. Para <strong>CDB (% CDI)</strong> e projeção de 5 anos com
-        IR regressivo, use{' '}
+        Saldo consolidado projetado mês a mês para os próximos <strong>5 anos</strong>, considerando receitas/despesas
+        previstas e contratos ativos/prospects cadastrados. Cenário conservador aplica receitas −5% e despesas +5%.
+        Para projeção específica de <strong>CDB (% CDI)</strong> com IR regressivo, use{' '}
         <Link to="/cdb" className="font-medium text-primary underline-offset-4 hover:underline">
           CDB / CDI
         </Link>
@@ -46,7 +46,7 @@ export default function Projecoes() {
       </p>
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Saldo previsto (12 meses)</CardTitle>
+          <CardTitle className="text-base">Saldo previsto (60 meses)</CardTitle>
         </CardHeader>
         <CardContent className="h-80">
           <ResponsiveContainer width="100%" height="100%">

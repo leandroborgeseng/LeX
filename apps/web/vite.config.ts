@@ -8,13 +8,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['pwa-192.png', 'pwa-512.png'],
+      includeAssets: ['pwa-192.png', 'pwa-512.png', 'favicon.svg'],
       manifest: {
         name: 'LeX Finance',
         short_name: 'LeX',
         description: 'Controle financeiro PF + PJ',
-        theme_color: '#0c1222',
-        background_color: '#0c1222',
+        theme_color: '#0f172a',
+        background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait-primary',
         scope: '/',

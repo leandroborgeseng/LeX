@@ -11,12 +11,12 @@ export class ProjectionsController {
   constructor(private readonly svc: ProjectionsService) {}
 
   @Get('base')
-  base(@Query('months') months = '12') {
+  base(@Query('months') months = '60') {
     return this.svc.monthlyBase(parseInt(months, 10));
   }
 
   @Get('conservative')
-  conservative(@Query('months') months = '12') {
+  conservative(@Query('months') months = '60') {
     return this.svc.conservative(parseInt(months, 10));
   }
 

@@ -95,6 +95,11 @@ export class UpdateRevenueDto {
   @IsOptional()
   @IsString()
   @MinLength(1)
+  financialEntityId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
   description?: string;
 
   @IsOptional()

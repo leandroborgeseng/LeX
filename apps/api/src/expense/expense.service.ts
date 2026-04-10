@@ -26,7 +26,9 @@ export class ExpenseService {
     accountId?: string;
     cardId?: string;
     paymentMethod?: PaymentMethod;
+    q?: string;
   }) {
+    const q = filters.q?.trim();
     return this.prisma.expense.findMany({
       where: {
         financialEntityId: filters.entityId,
@@ -36,6 +38,7 @@ export class ExpenseService {
         bankAccountId: filters.accountId,
         creditCardId: filters.cardId,
         paymentMethod: filters.paymentMethod,
+        ...(q ? { description: { contains: q } } : {}),
         competenceDate: {
           gte: filters.from ? new Date(filters.from) : undefined,
           lte: filters.to ? new Date(filters.to) : undefined,
@@ -140,19 +143,28 @@ export class ExpenseService {
   }
 
   async update(id: string, dto: UpdateExpenseDto) {
-    await this.findOne(id);
+    const current = await this.findOne(id);
+
+    let paidAt: Date | null | undefined = undefined;
+    if (dto.paidAt !== undefined) {
+      paidAt = dto.paidAt ? new Date(dto.paidAt) : null;
+    } else if (dto.status !== undefined) {
+      if (dto.status === ExpenseStatus.PAGO && current.status !== ExpenseStatus.PAGO) {
+        paidAt = new Date();
+      } else if (current.status === ExpenseStatus.PAGO && dto.status !== ExpenseStatus.PAGO) {
+        paidAt = null;
+      }
+    }
+
+    const { competenceDate, dueDate, paidAt: _ignoredPaid, ...rest } = dto;
+
     return this.prisma.expense.update({
       where: { id },
       data: {
-        ...dto,
-        competenceDate: dto.competenceDate ? new Date(dto.competenceDate) : undefined,
-        dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
-        paidAt:
-          dto.paidAt === undefined
-            ? undefined
-            : dto.paidAt
-              ? new Date(dto.paidAt)
-              : null,
+        ...rest,
+        competenceDate: competenceDate ? new Date(competenceDate) : undefined,
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+        ...(paidAt !== undefined ? { paidAt } : {}),
       },
     });
   }

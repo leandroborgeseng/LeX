@@ -10,6 +10,12 @@ import * as bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
+  if (process.env.NODE_ENV === 'production' && process.env.LEX_ALLOW_SEED_IN_PROD !== '1') {
+    throw new Error(
+      'Seed bloqueado em produção. Defina LEX_ALLOW_SEED_IN_PROD=1 apenas para bootstrap inicial.',
+    );
+  }
+
   const passwordHash = await bcrypt.hash('admin123', 10);
   await prisma.user.upsert({
     where: { email: 'admin@lex.local' },

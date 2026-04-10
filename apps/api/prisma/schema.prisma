@@ -71,6 +71,7 @@ enum AmortizationSystem {
 }
 
 enum ContractStatus {
+  PROSPECT
   ATIVO
   ENCERRADO
   SUSPENSO

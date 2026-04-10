@@ -4,30 +4,34 @@
 
 @layer base {
   :root {
-    --background: 222 47% 6%;
+    --background: 222 47% 8%;
     --foreground: 210 40% 98%;
-    --card: 222 40% 10%;
+    --card: 222 42% 12%;
     --card-foreground: 210 40% 98%;
-    --primary: 199 89% 48%;
-    --primary-foreground: 222 47% 6%;
-    --secondary: 217 33% 17%;
+    --primary: 199 95% 52%;
+    --primary-foreground: 222 47% 8%;
+    --secondary: 262 45% 22%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 172 66% 40%;
+    --muted: 217 28% 18%;
+    --muted-foreground: 215 20% 68%;
+    --accent: 160 72% 42%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 72% 51%;
+    --destructive: 350 78% 56%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 199 89% 48%;
-    --radius: 0.5rem;
+    --border: 217 30% 22%;
+    --input: 217 30% 22%;
+    --ring: 199 95% 52%;
+    --radius: 0.65rem;
   }
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply min-h-[100dvh] bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(ellipse 120% 80% at 10% -10%, hsl(199 95% 52% / 0.12), transparent 50%),
+      radial-gradient(ellipse 90% 60% at 100% 0%, hsl(262 80% 60% / 0.1), transparent 45%),
+      radial-gradient(ellipse 70% 50% at 50% 100%, hsl(160 72% 42% / 0.08), transparent 55%);
   }
   button,
   a,

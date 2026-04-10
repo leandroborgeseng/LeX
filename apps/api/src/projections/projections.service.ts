@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  ContractStatus,
   ExpenseStatus,
   RevenueStatus,
 } from '@prisma/client';
@@ -15,6 +16,7 @@ export class ProjectionsService {
   ) {}
 
   async monthlyBase(months: number) {
+    const safeMonths = Math.max(1, Math.min(120, months || 12));
     const balances = await this.balance.entityTypeTotals();
     const now = new Date();
     const rows: {
@@ -25,7 +27,11 @@ export class ProjectionsService {
     }[] = [];
     let running = balances.consolidated;
 
-    for (let i = 0; i < months; i++) {
+    const contracts = await this.prisma.contract.findMany({
+      where: { status: { in: [ContractStatus.ATIVO, ContractStatus.PROSPECT] } },
+    });
+
+    for (let i = 0; i < safeMonths; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
       const s = startOfMonth(d);
       const e = endOfMonth(d);
@@ -51,11 +57,12 @@ export class ProjectionsService {
       ]);
       const inflow = Number(rin._sum.netAmount ?? 0);
       const outflow = Number(rout._sum.amount ?? 0);
-      running = running + inflow - outflow;
+      const projectedContractsInflow = this.contractInflowForMonth(contracts, d);
+      running = running + inflow + projectedContractsInflow - outflow;
       rows.push({
         month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
         projectedBalance: Math.round(running * 100) / 100,
-        inflow,
+        inflow: Math.round((inflow + projectedContractsInflow) * 100) / 100,
         outflow,
       });
     }
@@ -108,5 +115,35 @@ export class ProjectionsService {
       futureInstallmentsSum: futurePay,
       estimatedInterestAvoided: saved,
     };
+  }
+
+  private contractInflowForMonth(
+    contracts: {
+      monthlyGross: unknown;
+      estimatedTax: unknown;
+      estimatedOpCost: unknown;
+      estimatedNet: unknown;
+      status: ContractStatus;
+      startDate: Date | null;
+      endDate: Date | null;
+    }[],
+    monthDate: Date,
+  ) {
+    const monthStart = startOfMonth(monthDate);
+    const monthEnd = endOfMonth(monthDate);
+    let total = 0;
+    for (const c of contracts) {
+      if (c.status === ContractStatus.SUSPENSO || c.status === ContractStatus.ENCERRADO) continue;
+      if (c.startDate && c.startDate > monthEnd) continue;
+      if (c.endDate && c.endDate < monthStart) continue;
+
+      const net = Number(c.estimatedNet ?? 0);
+      const gross = Number(c.monthlyGross ?? 0);
+      const tax = Number(c.estimatedTax ?? 0);
+      const op = Number(c.estimatedOpCost ?? 0);
+      const effective = net !== 0 ? net : gross - tax - op;
+      total += effective;
+    }
+    return total;
   }
 }

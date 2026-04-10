@@ -1,0 +1,2 @@
+-- SQLite stores Prisma enums as TEXT; no physical DDL change is required here.
+-- This migration marks the introduction of ContractStatus.PROSPECT in the Prisma schema.

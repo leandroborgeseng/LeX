@@ -30,6 +30,7 @@ export class RevenueController {
     @Query('payerSourceId') payerSourceId?: string,
     @Query('categoryId') categoryId?: string,
     @Query('accountId') accountId?: string,
+    @Query('q') q?: string,
   ) {
     return this.svc.findAll({
       entityId,
@@ -39,6 +40,7 @@ export class RevenueController {
       payerSourceId,
       categoryId,
       accountId,
+      q,
     });
   }
 

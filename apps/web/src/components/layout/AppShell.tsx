@@ -15,6 +15,7 @@ import {
   LineChart,
   Menu,
   TrendingUp,
+  UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { OfflineBar } from '@/components/layout/OfflineBar';
 import { CommandPalette } from '@/components/layout/CommandPalette';
 import { EntityFilterSelect } from '@/components/layout/EntityFilterSelect';
+import { LexMark } from '@/components/brand/LexMark';
 
 type NavItem = {
   to: string;
@@ -44,6 +46,7 @@ const nav: NavItem[] = [
   { to: '/relatorios', label: 'Relatórios', icon: FileText },
   { to: '/cdb', label: 'CDB / CDI', icon: TrendingUp },
   { to: '/projecoes', label: 'Projeções', icon: LineChart },
+  { to: '/perfil', label: 'Minha conta', icon: UserCog },
 ];
 
 const bottomNav: NavItem[] = [
@@ -118,8 +121,9 @@ export function AppShell() {
   return (
     <div className="flex min-h-screen min-h-[100dvh]">
       <aside className="relative hidden w-60 shrink-0 border-r border-border bg-card/50 md:block">
-        <div className="flex h-14 items-center border-b border-border px-4 font-semibold tracking-tight">
-          LeX Finance
+        <div className="flex h-14 items-center gap-2 border-b border-border px-3 font-semibold tracking-tight">
+          <LexMark />
+          <span className="truncate text-sm text-muted-foreground">Finance</span>
         </div>
         <nav className="max-h-[calc(100vh-7rem)] space-y-0.5 overflow-y-auto p-2">
           {nav.map((item) => (
@@ -147,7 +151,9 @@ export function AppShell() {
         <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
           <div className="flex flex-col gap-2 px-3 pb-2 pt-[env(safe-area-inset-top)]">
             <div className="flex h-12 items-center justify-between gap-2">
-              <span className="truncate font-semibold">LeX Finance</span>
+              <div className="min-w-0">
+                <LexMark withWordmark={false} className="scale-95" />
+              </div>
               <div className="flex shrink-0 items-center gap-1">
                 <Button
                   type="button"

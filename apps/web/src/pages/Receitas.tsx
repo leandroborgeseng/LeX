@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import api from '@/lib/api';
@@ -10,19 +10,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table';
+import { EditRevenueModal, type RevenueRow } from '@/components/movimentos/EditRevenueModal';
+import { cn } from '@/lib/utils';
+import { CheckCircle2 } from 'lucide-react';
 
 type Entity = { id: string; name: string; type: string };
 type Cat = { id: string; name: string };
 type Payer = { id: string; name: string };
 type Account = { id: string; name: string };
-type Rev = {
-  id: string;
-  description: string;
-  netAmount: string;
-  competenceDate: string;
-  dueDate: string;
+
+type ListFilters = {
+  q: string;
   status: string;
-  type: string;
+  from: string;
+  to: string;
+  categoryId: string;
+  payerSourceId: string;
+};
+
+const emptyListFilters: ListFilters = {
+  q: '',
+  status: '',
+  from: '',
+  to: '',
+  categoryId: '',
+  payerSourceId: '',
 };
 
 export default function Receitas() {
@@ -34,7 +46,10 @@ export default function Receitas() {
   const [cats, setCats] = useState<Cat[]>([]);
   const [payers, setPayers] = useState<Payer[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [rows, setRows] = useState<Rev[]>([]);
+  const [rows, setRows] = useState<RevenueRow[]>([]);
+
+  const [draftFilters, setDraftFilters] = useState<ListFilters>(emptyListFilters);
+  const [activeFilters, setActiveFilters] = useState<ListFilters>(emptyListFilters);
 
   const [financialEntityId, setFinancialEntityId] = useState('');
   const [description, setDescription] = useState('');
@@ -50,21 +65,33 @@ export default function Receitas() {
   const [recFreq, setRecFreq] = useState<'MONTHLY' | 'YEARLY' | 'CUSTOM'>('MONTHLY');
   const [future, setFuture] = useState('12');
   const [queueHint, setQueueHint] = useState('');
+  const [listActionMsg, setListActionMsg] = useState('');
 
-  async function load() {
-    const revPath = entityFilterId
-      ? `/revenues?financialEntityId=${encodeURIComponent(entityFilterId)}`
-      : '/revenues';
-    const [e, c, p, a, r] = await Promise.all([
+  const [editOpen, setEditOpen] = useState(false);
+  const [editing, setEditing] = useState<RevenueRow | null>(null);
+
+  const load = useCallback(async () => {
+    const p = new URLSearchParams();
+    if (entityFilterId) p.set('financialEntityId', entityFilterId);
+    if (activeFilters.q.trim()) p.set('q', activeFilters.q.trim());
+    if (activeFilters.status) p.set('status', activeFilters.status);
+    if (activeFilters.from) p.set('from', activeFilters.from);
+    if (activeFilters.to) p.set('to', activeFilters.to);
+    if (activeFilters.categoryId) p.set('categoryId', activeFilters.categoryId);
+    if (activeFilters.payerSourceId) p.set('payerSourceId', activeFilters.payerSourceId);
+    const qs = p.toString();
+    const revPath = qs ? `/revenues?${qs}` : '/revenues';
+
+    const [e, c, pay, a, r] = await Promise.all([
       api.get<Entity[]>('/financial-entities'),
       api.get<Cat[]>('/categories?kind=REVENUE'),
       api.get<Payer[]>('/payer-sources'),
       api.get<Account[]>('/bank-accounts'),
-      api.get<Rev[]>(revPath),
+      api.get<RevenueRow[]>(revPath),
     ]);
     setEntities(e.data);
     setCats(c.data);
-    setPayers(p.data);
+    setPayers(pay.data);
     setAccounts(a.data);
     setRows(r.data);
     if (entityFilterId && e.data.some((x) => x.id === entityFilterId)) {
@@ -72,11 +99,11 @@ export default function Receitas() {
     } else if (e.data[0]) {
       setFinancialEntityId(e.data[0].id);
     }
-  }
+  }, [entityFilterId, activeFilters]);
 
   useEffect(() => {
     void load();
-  }, [entityFilterId]);
+  }, [load]);
 
   const displayRows = useMemo(() => {
     if (listFilter !== 'proximos') return rows;
@@ -85,6 +112,22 @@ export default function Receitas() {
         (r.status === 'PREVISTO' || r.status === 'ATRASADO') && isDueWithinDaysFromToday(r.dueDate, 30),
     );
   }, [rows, listFilter]);
+
+  function openEdit(r: RevenueRow) {
+    setEditing(r);
+    setEditOpen(true);
+  }
+
+  async function markAsReceived(id: string) {
+    setListActionMsg('');
+    try {
+      await api.patch(`/revenues/${id}`, { status: 'RECEBIDO' });
+      await load();
+      setListActionMsg('Marcada como recebida (realizado). Abra o registo para ajustar valores ou data se precisar.');
+    } catch {
+      setListActionMsg('Não foi possível marcar como recebida. Tente pelo editor.');
+    }
+  }
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -137,8 +180,19 @@ export default function Receitas() {
 
   return (
     <div className="space-y-6 pb-2">
+      <EditRevenueModal
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        row={editing}
+        entities={entities}
+        cats={cats}
+        payers={payers}
+        accounts={accounts}
+        onSaved={() => void load()}
+      />
+
       {listFilter === 'proximos' && (
-        <div className="flex flex-col gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 rounded-xl border border-emerald-400/35 bg-emerald-500/10 px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
           <span>
             A mostrar apenas receitas <strong>previstas ou atrasadas</strong> com vencimento nos próximos{' '}
             <strong>30 dias</strong>.
@@ -151,11 +205,107 @@ export default function Receitas() {
       {queueHint && (
         <p className="rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-primary">{queueHint}</p>
       )}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Nova receita</CardTitle>
+      {listActionMsg && (
+        <p className="rounded-md border border-emerald-500/35 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">{listActionMsg}</p>
+      )}
+
+      <Card className="border-emerald-500/25 shadow-md shadow-emerald-500/5">
+        <CardHeader className="rounded-t-xl border-b border-emerald-500/15 bg-gradient-to-r from-emerald-500/15 to-sky-500/10">
+          <CardTitle className="text-base text-emerald-100">Filtros da lista</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="grid gap-3 pt-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+            <Label>Buscar na descrição</Label>
+            <Input
+              value={draftFilters.q}
+              onChange={(e) => setDraftFilters((f) => ({ ...f, q: e.target.value }))}
+              placeholder="Ex.: salário, cliente…"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <select
+              className="min-h-11 w-full rounded-md border border-input bg-card px-3 py-2 text-sm touch-manipulation"
+              value={draftFilters.status}
+              onChange={(e) => setDraftFilters((f) => ({ ...f, status: e.target.value }))}
+            >
+              <option value="">Todos</option>
+              <option value="PREVISTO">Previsto</option>
+              <option value="RECEBIDO">Recebido</option>
+              <option value="ATRASADO">Atrasado</option>
+              <option value="CANCELADO">Cancelado</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label>Categoria</Label>
+            <select
+              className="min-h-11 w-full rounded-md border border-input bg-card px-3 py-2 text-sm touch-manipulation"
+              value={draftFilters.categoryId}
+              onChange={(e) => setDraftFilters((f) => ({ ...f, categoryId: e.target.value }))}
+            >
+              <option value="">Todas</option>
+              {cats.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label>Fonte pagadora</Label>
+            <select
+              className="min-h-11 w-full rounded-md border border-input bg-card px-3 py-2 text-sm touch-manipulation"
+              value={draftFilters.payerSourceId}
+              onChange={(e) => setDraftFilters((f) => ({ ...f, payerSourceId: e.target.value }))}
+            >
+              <option value="">Todas</option>
+              {payers.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label>Competência desde</Label>
+            <Input
+              type="date"
+              value={draftFilters.from}
+              onChange={(e) => setDraftFilters((f) => ({ ...f, from: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Competência até</Label>
+            <Input
+              type="date"
+              value={draftFilters.to}
+              onChange={(e) => setDraftFilters((f) => ({ ...f, to: e.target.value }))}
+            />
+          </div>
+          <div className="flex flex-wrap items-end gap-2 sm:col-span-2 lg:col-span-3">
+            <Button type="button" className="touch-manipulation" onClick={() => setActiveFilters({ ...draftFilters })}>
+              Aplicar filtros
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="touch-manipulation"
+              onClick={() => {
+                setDraftFilters(emptyListFilters);
+                setActiveFilters(emptyListFilters);
+              }}
+            >
+              Limpar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-emerald-500/20 shadow-lg shadow-emerald-500/5">
+        <CardHeader className="rounded-t-xl border-b border-emerald-500/10 bg-gradient-to-r from-emerald-500/12 to-transparent">
+          <CardTitle className="text-base text-emerald-50">Nova receita</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4">
           <form onSubmit={create} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-2">
               <Label>Entidade</Label>
@@ -281,13 +431,17 @@ export default function Receitas() {
           </form>
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">
-            {listFilter === 'proximos' ? 'Receitas a vencer (filtro)' : 'Últimas receitas'}
+
+      <Card className="border-sky-500/20 shadow-lg shadow-sky-500/5">
+        <CardHeader className="rounded-t-xl border-b border-sky-500/10 bg-gradient-to-r from-sky-500/12 to-transparent">
+          <CardTitle className="text-base text-sky-100">
+            {listFilter === 'proximos' ? 'Receitas a vencer (filtro)' : 'Receitas'}
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              — clique para editar; ✓ marca como recebido sem abrir o editor
+            </span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 pt-4">
           {listFilter === 'proximos' && displayRows.length === 0 && (
             <p className="text-sm text-muted-foreground">Nenhuma receita corresponde a este filtro.</p>
           )}
@@ -295,6 +449,7 @@ export default function Receitas() {
             <Table>
               <THead>
                 <TR>
+                  <TH className="w-12 text-center">✓</TH>
                   <TH>Descrição</TH>
                   <TH>Competência</TH>
                   <TH>Vencimento</TH>
@@ -303,32 +458,72 @@ export default function Receitas() {
                 </TR>
               </THead>
               <TBody>
-                {displayRows.slice(0, 40).map((r) => (
-                  <TR key={r.id}>
+                {displayRows.slice(0, 80).map((r) => (
+                  <TR
+                    key={r.id}
+                    className={cn('cursor-pointer transition-colors hover:bg-emerald-500/10')}
+                    onClick={() => openEdit(r)}
+                  >
+                    <TD className="text-center" onClick={(e) => e.stopPropagation()}>
+                      {(r.status === 'PREVISTO' || r.status === 'ATRASADO') ? (
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          className="h-9 w-9 touch-manipulation border-emerald-500/40"
+                          title="Marcar como recebido (realizado)"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void markAsReceived(r.id);
+                          }}
+                        >
+                          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                        </Button>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TD>
                     <TD>{r.description}</TD>
                     <TD>{formatDateBr(r.competenceDate)}</TD>
                     <TD>{formatDateBr(r.dueDate)}</TD>
-                    <TD>{brl(parseFloat(r.netAmount))}</TD>
-                    <TD>{r.status}</TD>
+                    <TD className="font-medium text-emerald-300">{brl(parseFloat(r.netAmount))}</TD>
+                    <TD>
+                      <span className="rounded-full bg-muted/80 px-2 py-0.5 text-xs">{r.status}</span>
+                    </TD>
                   </TR>
                 ))}
               </TBody>
             </Table>
           </div>
           <ul className="space-y-2 md:hidden">
-            {displayRows.slice(0, 40).map((r) => (
-              <li
-                key={r.id}
-                className="rounded-lg border border-border bg-card/80 px-3 py-3 text-sm shadow-sm"
-              >
-                <p className="font-medium leading-snug">{r.description}</p>
-                <p className="mt-1 text-muted-foreground">
-                  {formatDateBr(r.competenceDate)} · venc. {formatDateBr(r.dueDate)}
-                </p>
-                <p className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-base font-semibold text-foreground">{brl(parseFloat(r.netAmount))}</span>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{r.status}</span>
-                </p>
+            {displayRows.slice(0, 80).map((r) => (
+              <li key={r.id} className="flex gap-2">
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 rounded-xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-card px-3 py-3 text-left text-sm shadow-md transition hover:border-emerald-400/40"
+                  onClick={() => openEdit(r)}
+                >
+                  <p className="font-medium leading-snug text-emerald-50">{r.description}</p>
+                  <p className="mt-1 text-muted-foreground">
+                    {formatDateBr(r.competenceDate)} · venc. {formatDateBr(r.dueDate)}
+                  </p>
+                  <p className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-base font-semibold text-emerald-300">{brl(parseFloat(r.netAmount))}</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{r.status}</span>
+                  </p>
+                </button>
+                {(r.status === 'PREVISTO' || r.status === 'ATRASADO') && (
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    className="h-11 w-11 shrink-0 self-center touch-manipulation border-emerald-500/40"
+                    title="Recebido"
+                    onClick={() => void markAsReceived(r.id)}
+                  >
+                    <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                  </Button>
+                )}
               </li>
             ))}
           </ul>

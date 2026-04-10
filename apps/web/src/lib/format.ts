@@ -22,6 +22,16 @@ export function todayDateInputValue(): string {
   return `${y}-${m}-${day}`;
 }
 
+/** Converte ISO da API para valor de `<input type="date">` no fuso local. */
+export function dateInputFromIso(iso: string): string {
+  const x = new Date(iso);
+  if (Number.isNaN(x.getTime())) return todayDateInputValue();
+  const y = x.getFullYear();
+  const m = String(x.getMonth() + 1).padStart(2, '0');
+  const day = String(x.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 /** Vencimento entre hoje 00:00 e hoje+`days` 23:59:59 (local). */
 export function isDueWithinDaysFromToday(isoDue: string, days: number): boolean {
   const due = new Date(isoDue);

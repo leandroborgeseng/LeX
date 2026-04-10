@@ -23,7 +23,9 @@ export class RevenueService {
     payerSourceId?: string;
     categoryId?: string;
     accountId?: string;
+    q?: string;
   }) {
+    const q = filters.q?.trim();
     return this.prisma.revenue.findMany({
       where: {
         financialEntityId: filters.entityId,
@@ -31,6 +33,7 @@ export class RevenueService {
         payerSourceId: filters.payerSourceId,
         categoryId: filters.categoryId,
         destinationAccountId: filters.accountId,
+        ...(q ? { description: { contains: q } } : {}),
         competenceDate: {
           gte: filters.from ? new Date(filters.from) : undefined,
           lte: filters.to ? new Date(filters.to) : undefined,
@@ -129,19 +132,28 @@ export class RevenueService {
   }
 
   async update(id: string, dto: UpdateRevenueDto) {
-    await this.findOne(id);
+    const current = await this.findOne(id);
+
+    let receivedAt: Date | null | undefined = undefined;
+    if (dto.receivedAt !== undefined) {
+      receivedAt = dto.receivedAt ? new Date(dto.receivedAt) : null;
+    } else if (dto.status !== undefined) {
+      if (dto.status === RevenueStatus.RECEBIDO && current.status !== RevenueStatus.RECEBIDO) {
+        receivedAt = new Date();
+      } else if (current.status === RevenueStatus.RECEBIDO && dto.status !== RevenueStatus.RECEBIDO) {
+        receivedAt = null;
+      }
+    }
+
+    const { competenceDate, dueDate, receivedAt: _ignoredReceived, ...rest } = dto;
+
     return this.prisma.revenue.update({
       where: { id },
       data: {
-        ...dto,
-        competenceDate: dto.competenceDate ? new Date(dto.competenceDate) : undefined,
-        dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
-        receivedAt:
-          dto.receivedAt === undefined
-            ? undefined
-            : dto.receivedAt
-              ? new Date(dto.receivedAt)
-              : null,
+        ...rest,
+        competenceDate: competenceDate ? new Date(competenceDate) : undefined,
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+        ...(receivedAt !== undefined ? { receivedAt } : {}),
       },
     });
   }
