@@ -44,3 +44,38 @@ export class CreateInternalTransferDto {
   @MinLength(1)
   toAccountId?: string;
 }
+
+export class UpdateInternalTransferDto {
+  @IsOptional()
+  @IsEnum(TransferType)
+  type?: TransferType;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  amount?: number;
+
+  @IsOptional()
+  @IsDateString()
+  date?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string | null;
+
+  @IsOptional()
+  @IsString()
+  fromEntityId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  toEntityId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  fromAccountId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  toAccountId?: string | null;
+}

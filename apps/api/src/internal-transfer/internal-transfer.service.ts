@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateInternalTransferDto } from './dto/internal-transfer.dto';
+import { CreateInternalTransferDto, UpdateInternalTransferDto } from './dto/internal-transfer.dto';
 
 @Injectable()
 export class InternalTransferService {
@@ -43,6 +43,24 @@ export class InternalTransferService {
         fromAccountId: dto.fromAccountId,
         toAccountId: dto.toAccountId,
       },
+    });
+  }
+
+  async update(id: string, dto: UpdateInternalTransferDto) {
+    await this.findOne(id);
+    return this.prisma.internalTransfer.update({
+      where: { id },
+      data: {
+        ...(dto.type !== undefined ? { type: dto.type } : {}),
+        ...(dto.amount !== undefined ? { amount: dto.amount } : {}),
+        ...(dto.date !== undefined ? { date: new Date(dto.date) } : {}),
+        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.fromEntityId !== undefined ? { fromEntityId: dto.fromEntityId } : {}),
+        ...(dto.toEntityId !== undefined ? { toEntityId: dto.toEntityId } : {}),
+        ...(dto.fromAccountId !== undefined ? { fromAccountId: dto.fromAccountId } : {}),
+        ...(dto.toAccountId !== undefined ? { toAccountId: dto.toAccountId } : {}),
+      },
+      include: { fromEntity: true, toEntity: true, fromAccount: true, toAccount: true },
     });
   }
 }

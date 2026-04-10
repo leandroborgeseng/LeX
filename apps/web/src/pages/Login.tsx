@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Login() {
   const nav = useNavigate();
-  const [email, setEmail] = useState('leandro.borges@me.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);

@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
+type Entity = { id: string; name: string };
 type Inst = {
   id: string;
   number: number;
@@ -19,6 +21,7 @@ type Inst = {
 };
 type Fin = {
   id: string;
+  financialEntityId: string | null;
   name: string;
   creditor: string | null;
   originalValue: string;
@@ -27,6 +30,7 @@ type Fin = {
 };
 
 export default function Financiamentos() {
+  const [entities, setEntities] = useState<Entity[]>([]);
   const [rows, setRows] = useState<Fin[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -38,14 +42,30 @@ export default function Financiamentos() {
   const [amortSystem, setAmortSystem] = useState<'PRICE' | 'SAC'>('PRICE');
   const [startDate, setStartDate] = useState('');
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [editing, setEditing] = useState<Fin | null>(null);
+  const [eEntityId, setEEntityId] = useState('');
+  const [eName, setEName] = useState('');
+  const [eCreditor, setECreditor] = useState('');
+  const [saving, setSaving] = useState(false);
+
   async function load() {
-    const { data } = await api.get<Fin[]>('/financings');
-    setRows(data);
+    const [e, f] = await Promise.all([api.get<Entity[]>('/financial-entities'), api.get<Fin[]>('/financings')]);
+    setEntities(e.data);
+    setRows(f.data);
   }
 
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    if (editing && editOpen) {
+      setEEntityId(editing.financialEntityId ?? '');
+      setEName(editing.name);
+      setECreditor(editing.creditor ?? '');
+    }
+  }, [editing, editOpen]);
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -64,8 +84,76 @@ export default function Financiamentos() {
     await load();
   }
 
+  function openEdit(f: Fin) {
+    setEditing(f);
+    setEditOpen(true);
+  }
+
+  async function saveEdit(ev: React.FormEvent) {
+    ev.preventDefault();
+    if (!editing) return;
+    setSaving(true);
+    try {
+      await api.patch(`/financings/${editing.id}`, {
+        name: eName,
+        creditor: eCreditor.trim() ? eCreditor : null,
+        financialEntityId: eEntityId || null,
+      });
+      setEditOpen(false);
+      setEditing(null);
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-md" onOpenAutoFocus={(ev) => ev.preventDefault()}>
+          <h2 className="text-lg font-semibold">Editar financiamento</h2>
+          <p className="text-sm text-muted-foreground">
+            Ajuste nome, credor e entidade. Valor, taxa e parcelas mantêm-se na tabela gerada; use regeneração na API
+            se precisar de novo cronograma.
+          </p>
+          {editing && (
+            <form onSubmit={saveEdit} className="grid gap-4">
+              <div className="space-y-2">
+                <Label>Entidade (opcional)</Label>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm"
+                  value={eEntityId}
+                  onChange={(e) => setEEntityId(e.target.value)}
+                >
+                  <option value="">—</option>
+                  {entities.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Nome</Label>
+                <Input value={eName} onChange={(e) => setEName(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Credor</Label>
+                <Input value={eCreditor} onChange={(e) => setECreditor(e.target.value)} />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  {saving ? 'Salvando…' : 'Salvar'}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <h1 className="text-2xl font-semibold">Financiamentos</h1>
       <Card>
         <CardHeader>
@@ -125,9 +213,14 @@ export default function Financiamentos() {
                     {f.creditor ?? '—'} · Saldo: {brl(parseFloat(f.currentBalance))}
                   </p>
                 </div>
-                <Button type="button" variant="outline" size="sm" onClick={() => setExpanded(expanded === f.id ? null : f.id)}>
-                  {expanded === f.id ? 'Ocultar parcelas' : 'Ver parcelas'}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="secondary" size="sm" onClick={() => openEdit(f)}>
+                    Editar
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setExpanded(expanded === f.id ? null : f.id)}>
+                    {expanded === f.id ? 'Ocultar parcelas' : 'Ver parcelas'}
+                  </Button>
+                </div>
               </div>
               {expanded === f.id && (
                 <Table>

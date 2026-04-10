@@ -49,3 +49,19 @@ export class PayInstallmentDto {
   @IsDateString()
   paidAt!: string;
 }
+
+/** Metadados editáveis sem recalcular parcelas (valor, taxa e tabela continuam nos registos existentes). */
+export class UpdateFinancingDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  creditor?: string | null;
+
+  @IsOptional()
+  @IsString()
+  financialEntityId?: string | null;
+}

@@ -6,7 +6,7 @@ import {
 import { ExpenseStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { buildSchedule } from './amortization.util';
-import { CreateFinancingDto } from './dto/financing.dto';
+import { CreateFinancingDto, UpdateFinancingDto } from './dto/financing.dto';
 
 @Injectable()
 export class FinancingService {
@@ -142,5 +142,18 @@ export class FinancingService {
       data: { installmentValue: schedule[0]?.payment ?? 0 },
     });
     return this.findOne(financingId);
+  }
+
+  async update(id: string, dto: UpdateFinancingDto) {
+    await this.findOne(id);
+    return this.prisma.financing.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.creditor !== undefined ? { creditor: dto.creditor } : {}),
+        ...(dto.financialEntityId !== undefined ? { financialEntityId: dto.financialEntityId } : {}),
+      },
+      include: { installments: { orderBy: { number: 'asc' } } },
+    });
   }
 }

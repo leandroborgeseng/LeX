@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { brl } from '@/lib/format';
+import { brl, dateInputFromIso } from '@/lib/format';
 import { apiErrorMessage } from '@/lib/api-error';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   Line,
   LineChart,
@@ -30,6 +31,8 @@ type AppRow = {
   indexerPercentOfCdi: string;
   assumedCdiAnnualPercent: string;
   active: boolean;
+  financialEntityId: string | null;
+  notes: string | null;
   financialEntity: { name: string } | null;
 };
 
@@ -62,6 +65,20 @@ export default function Cdb() {
 
   const [projTick, setProjTick] = useState(0);
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [editing, setEditing] = useState<AppRow | null>(null);
+  const [eEntityId, setEEntityId] = useState('');
+  const [eName, setEName] = useState('');
+  const [eInst, setEInst] = useState('');
+  const [ePrincipal, setEPrincipal] = useState('');
+  const [eAppDate, setEAppDate] = useState('');
+  const [eMatDate, setEMatDate] = useState('');
+  const [ePct, setEPct] = useState('');
+  const [eCdi, setECdi] = useState('');
+  const [eActive, setEActive] = useState(true);
+  const [eNotes, setENotes] = useState('');
+  const [cdbSaving, setCdbSaving] = useState(false);
+
   const load = useCallback(async () => {
     const [e, a] = await Promise.all([api.get<Entity[]>('/financial-entities'), api.get<AppRow[]>('/cdb-applications')]);
     setEntities(e.data);
@@ -86,6 +103,58 @@ export default function Cdb() {
   useEffect(() => {
     void fetchProjection();
   }, [fetchProjection, projTick]);
+
+  useEffect(() => {
+    if (!editing || !editOpen) return;
+    setEEntityId(editing.financialEntityId ?? '');
+    setEName(editing.name);
+    setEInst(editing.institution ?? '');
+    setEPrincipal(String(parseFloat(editing.principal)));
+    setEAppDate(dateInputFromIso(editing.applicationDate));
+    setEMatDate(editing.maturityDate ? dateInputFromIso(editing.maturityDate) : '');
+    setEPct(String(parseFloat(editing.indexerPercentOfCdi)));
+    setECdi(String(parseFloat(editing.assumedCdiAnnualPercent)));
+    setEActive(editing.active);
+    setENotes(editing.notes ?? '');
+  }, [editing, editOpen]);
+
+  function openCdbEdit(r: AppRow) {
+    setEditing(r);
+    setEditOpen(true);
+  }
+
+  async function saveCdbEdit(ev: React.FormEvent) {
+    ev.preventDefault();
+    if (!editing) return;
+    setCdbSaving(true);
+    setHint('');
+    try {
+      await api.patch(`/cdb-applications/${editing.id}`, {
+        financialEntityId: eEntityId || null,
+        name: eName,
+        institution: eInst.trim() ? eInst : null,
+        principal: parseFloat(ePrincipal.replace(',', '.')) || 0,
+        applicationDate: new Date(eAppDate).toISOString(),
+        maturityDate: eMatDate ? new Date(eMatDate).toISOString() : null,
+        indexerPercentOfCdi: parseFloat(ePct.replace(',', '.')) || 100,
+        assumedCdiAnnualPercent: parseFloat(eCdi.replace(',', '.')) || 10.5,
+        active: eActive,
+        notes: eNotes.trim() ? eNotes : null,
+      });
+      setEditOpen(false);
+      setEditing(null);
+      await load();
+      setProjTick((t) => t + 1);
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response?.status === 400) {
+        setHint(apiErrorMessage(err.response?.data));
+      } else {
+        setHint('Erro ao atualizar CDB.');
+      }
+    } finally {
+      setCdbSaving(false);
+    }
+  }
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -128,6 +197,83 @@ export default function Cdb() {
 
   return (
     <div className="space-y-6 pb-4">
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto" onOpenAutoFocus={(ev) => ev.preventDefault()}>
+          <h2 className="text-lg font-semibold">Editar CDB</h2>
+          {editing && (
+            <form onSubmit={saveCdbEdit} className="grid gap-4">
+              <div className="space-y-2">
+                <Label>Entidade (opcional)</Label>
+                <select
+                  className="min-h-11 w-full rounded-md border border-input bg-card px-3 py-2 text-sm touch-manipulation"
+                  value={eEntityId}
+                  onChange={(e) => setEEntityId(e.target.value)}
+                >
+                  <option value="">—</option>
+                  {entities.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Nome</Label>
+                <Input value={eName} onChange={(e) => setEName(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Banco / emissor</Label>
+                <Input value={eInst} onChange={(e) => setEInst(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Valor aplicado (R$)</Label>
+                <Input value={ePrincipal} onChange={(e) => setEPrincipal(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Data da aplicação</Label>
+                <Input type="date" value={eAppDate} onChange={(e) => setEAppDate(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Vencimento (opcional)</Label>
+                <Input type="date" value={eMatDate} onChange={(e) => setEMatDate(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>% do CDI</Label>
+                <Input value={ePct} onChange={(e) => setEPct(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label>CDI anual assumido (% a.a.)</Label>
+                <Input value={eCdi} onChange={(e) => setECdi(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Notas</Label>
+                <Input value={eNotes} onChange={(e) => setENotes(e.target.value)} />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  id="cdb-active"
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-input"
+                  checked={eActive}
+                  onChange={(e) => setEActive(e.target.checked)}
+                />
+                <Label htmlFor="cdb-active" className="font-normal">
+                  Ativo na projeção
+                </Label>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={cdbSaving}>
+                  {cdbSaving ? 'Salvando…' : 'Salvar'}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <div>
         <h1 className="text-xl font-semibold md:text-2xl">CDB (% CDI)</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -291,6 +437,7 @@ export default function Cdb() {
                   <TH>CDI a.a.</TH>
                   <TH>Aplicação</TH>
                   <TH>Ativo</TH>
+                  <TH className="w-[88px]"> </TH>
                 </TR>
               </THead>
               <TBody>
@@ -304,6 +451,11 @@ export default function Cdb() {
                     <TD>{r.assumedCdiAnnualPercent}%</TD>
                     <TD>{r.applicationDate.slice(0, 10)}</TD>
                     <TD>{r.active ? 'Sim' : 'Não'}</TD>
+                    <TD>
+                      <Button type="button" variant="outline" size="sm" onClick={() => openCdbEdit(r)}>
+                        Editar
+                      </Button>
+                    </TD>
                   </TR>
                 ))}
               </TBody>
@@ -317,6 +469,9 @@ export default function Cdb() {
                   {r.institution ?? '—'} · {r.indexerPercentOfCdi}% CDI · CDI {r.assumedCdiAnnualPercent}% a.a.
                 </p>
                 <p className="mt-1">{brl(parseFloat(r.principal))}</p>
+                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => openCdbEdit(r)}>
+                  Editar
+                </Button>
               </li>
             ))}
           </ul>

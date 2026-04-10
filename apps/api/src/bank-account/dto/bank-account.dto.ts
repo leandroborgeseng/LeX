@@ -39,6 +39,11 @@ export class UpdateBankAccountDto {
   @IsOptional()
   @IsString()
   @MinLength(1)
+  financialEntityId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
   name?: string;
 
   @IsOptional()

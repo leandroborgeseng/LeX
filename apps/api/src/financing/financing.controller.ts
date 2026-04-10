@@ -1,8 +1,8 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { FinancingService } from './financing.service';
-import { CreateFinancingDto, PayInstallmentDto } from './dto/financing.dto';
+import { CreateFinancingDto, PayInstallmentDto, UpdateFinancingDto } from './dto/financing.dto';
 
 @ApiTags('financings')
 @ApiBearerAuth()
@@ -24,6 +24,11 @@ export class FinancingController {
   @Post()
   create(@Body() dto: CreateFinancingDto) {
     return this.svc.create(dto);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateFinancingDto) {
+    return this.svc.update(id, dto);
   }
 
   @Post(':id/installments/:number/pay')

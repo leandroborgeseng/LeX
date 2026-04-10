@@ -1,4 +1,4 @@
-import { IsString, MinLength } from 'class-validator';
+import { IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreatePayerSourceDto {
   @IsString()
@@ -7,7 +7,8 @@ export class CreatePayerSourceDto {
 }
 
 export class UpdatePayerSourceDto {
+  @IsOptional()
   @IsString()
   @MinLength(1)
-  name!: string;
+  name?: string;
 }

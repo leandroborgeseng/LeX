@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { EntityType } from '@prisma/client';
-import { IsEnum, IsString, MinLength } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateFinancialEntityDto {
   @ApiProperty({ enum: EntityType })
@@ -15,7 +15,13 @@ export class CreateFinancialEntityDto {
 
 export class UpdateFinancialEntityDto {
   @ApiProperty({ required: false })
+  @IsOptional()
   @IsString()
   @MinLength(1)
   name?: string;
+
+  @ApiProperty({ enum: EntityType, required: false })
+  @IsOptional()
+  @IsEnum(EntityType)
+  type?: EntityType;
 }
