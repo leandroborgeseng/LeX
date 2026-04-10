@@ -27,21 +27,20 @@ echo "LeX: DATABASE_URL=${DATABASE_URL}"
 echo "LeX: migrando…"
 npx prisma migrate deploy --schema=prisma/schema.prisma
 
+# Se não existir nenhum utilizador (volume novo / primeiro deploy), corre seed uma vez.
+# LEX_ALLOW_SEED_IN_PROD só é exportado neste ramo — o script Prisma exige-o em NODE_ENV=production.
+# Desative com LEX_SKIP_AUTO_SEED=1 (ex.: imagem só para migrações).
 if [ "${LEX_SKIP_AUTO_SEED:-0}" != "1" ]; then
-  # Em produção, nunca executa auto-seed sem autorização explícita.
-  if [ "${NODE_ENV:-}" = "production" ] && [ "${LEX_ALLOW_AUTO_SEED_IN_PROD:-0}" != "1" ]; then
-    echo "LeX: auto-seed desativado em produção (defina LEX_ALLOW_AUTO_SEED_IN_PROD=1 apenas para bootstrap inicial)." >&2
-  else
   set +e
   node scripts/auto-seed-if-empty.cjs
   seed_check=$?
   set -e
   if [ "$seed_check" -eq 0 ]; then
     echo "LeX: base sem utilizadores — a executar seed (admin@lex.local / admin123)…"
+    export LEX_ALLOW_SEED_IN_PROD=1
     npx prisma db seed --schema=prisma/schema.prisma
   elif [ "$seed_check" -ne 2 ]; then
     echo "LeX: aviso — não foi possível verificar utilizadores (código $seed_check)." >&2
-  fi
   fi
 fi
 
