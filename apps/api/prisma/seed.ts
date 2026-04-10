@@ -9,6 +9,10 @@ import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+/** Utilizador inicial (bootstrap local / Docker / primeiro deploy). */
+const SEED_USER_EMAIL = 'leandro.borges@me.com';
+const SEED_USER_PASSWORD = 'Lean777$';
+
 async function main() {
   if (process.env.NODE_ENV === 'production' && process.env.LEX_ALLOW_SEED_IN_PROD !== '1') {
     throw new Error(
@@ -16,14 +20,18 @@ async function main() {
     );
   }
 
-  const passwordHash = await bcrypt.hash('admin123', 10);
-  await prisma.user.upsert({
+  await prisma.user.deleteMany({
     where: { email: 'admin@lex.local' },
+  });
+
+  const passwordHash = await bcrypt.hash(SEED_USER_PASSWORD, 10);
+  await prisma.user.upsert({
+    where: { email: SEED_USER_EMAIL },
     update: { passwordHash },
     create: {
-      email: 'admin@lex.local',
+      email: SEED_USER_EMAIL,
       passwordHash,
-      name: 'Administrador',
+      name: 'Leandro Borges',
     },
   });
 

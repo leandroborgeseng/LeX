@@ -12,7 +12,7 @@ services:
       NODE_ENV: production
       PORT: "3000"
       JWT_SECRET: ${LEX_JWT_SECRET:-change-me-docker-compose}
-      # Primeiro arranque com volume vazio: entrypoint corre seed (admin@lex.local / admin123).
+      # Primeiro arranque com volume vazio: entrypoint corre seed (leandro.borges@me.com — ver README).
       # Railway (Dockerfile): mesmo comportamento, sem precisar de variáveis extra.
       # LEX_SKIP_AUTO_SEED=1 desativa o auto-seed.
     volumes:

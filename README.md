@@ -65,7 +65,7 @@ docker-compose.yml → um serviço `app`, volume `lex_sqlite` → /data
    pnpm db:seed
    ```
 
-   > O seed cria o usuário **admin@lex.local** / **admin123**, entidades PF/PJ seed, membros, categorias, fontes pagadoras e contratos Microblau, Unimed e FIPEC (valores zerados para edição).
+   > O seed cria o usuário **leandro.borges@me.com** (senha inicial no ficheiro `apps/api/prisma/seed.ts`), entidades PF/PJ seed, membros, categorias, fontes pagadoras e contratos Microblau, Unimed e FIPEC (valores zerados para edição).
 
 4. Desenvolvimento (API + frontend com proxy):
 
@@ -126,13 +126,15 @@ docker run -p 3000:3000 -e JWT_SECRET=sua-chave -v lex_data:/data lex-finance
 
 - `PORT` pode ser sobrescrito (Railway injeta `PORT`); dentro do Compose o serviço usa `3000` interno.
 - SQLite persistente: `DATABASE_URL=file:/data/app.db` (padrão na imagem). Monte um volume em **`/data`**.
-- Entrypoint: `docker/entrypoint.sh` (copiado para `/usr/local/bin/lex-entrypoint.sh` na imagem). Após `migrate deploy`, se **não existir nenhum utilizador** (volume SQLite novo), corre o **seed automaticamente** (`admin@lex.local` / `admin123`). Para desativar: `LEX_SKIP_AUTO_SEED=1`.
+- Entrypoint: `docker/entrypoint.sh` (copiado para `/usr/local/bin/lex-entrypoint.sh` na imagem). Após `migrate deploy`, se **não existir nenhum utilizador** (volume SQLite novo), corre o **seed automaticamente** (credenciais definidas em `apps/api/prisma/seed.ts`). Para desativar: `LEX_SKIP_AUTO_SEED=1`.
 
 Se a base **já tem utilizadores** e precisar de correr o seed manualmente (raro):
 
 ```bash
 docker exec -it <container> sh -c "cd /app/apps/api && LEX_ALLOW_SEED_IN_PROD=1 npx prisma db seed"
 ```
+
+O seed atual remove o utilizador legado `admin@lex.local` (se existir) e garante o utilizador definido em `seed.ts`. Útil após mudar o e-mail/senha do bootstrap sem apagar o volume.
 
 ## Deploy no Railway
 
@@ -152,7 +154,7 @@ docker exec -it <container> sh -c "cd /app/apps/api && LEX_ALLOW_SEED_IN_PROD=1 
    - `DATABASE_URL=file:/data/app.db` (já é o padrão do `Dockerfile`; reforce se necessário).
    - `PORT` — definido automaticamente pelo Railway.
 4. O arquivo `railway.json` aponta para o `Dockerfile` na raiz.
-5. **Primeiro deploy:** com volume em `/data` vazio, o entrypoint aplica migrações e **cria o utilizador seed** sozinho (não precisa de `docker exec` nem variáveis extra no Railway). Login: `admin@lex.local` / `admin123` — altere a senha depois. Com base já populada, o seed **não** volta a correr.
+5. **Primeiro deploy:** com volume em `/data` vazio, o entrypoint aplica migrações e **cria o utilizador seed** sozinho (não precisa de `docker exec` nem variáveis extra no Railway). E-mail e senha inicial estão em `apps/api/prisma/seed.ts` — altere a senha na app depois do primeiro login. Com base já populada, o seed **não** volta a correr (para atualizar o hash, rode o seed manualmente com `LEX_ALLOW_SEED_IN_PROD=1` ou altere a senha no ecrã de perfil).
 
 6. Em **Settings → Networking**, gere um **domínio público** (ou use o que o Railway atribui). Serviço só com rede interna ou URL errada costuma aparecer como *Application failed to respond*. Health check: `GET /health` → `ok`.
 7. Acesse a URL pública: interface web na raiz, API em `/api`, documentação em `/api/docs`.
