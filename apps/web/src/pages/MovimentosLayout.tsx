@@ -9,7 +9,7 @@ const tabs = [
 export default function MovimentosLayout() {
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-sky-500/10 via-card to-emerald-500/10 p-4 shadow-lg shadow-sky-500/5">
+      <div className="rounded-2xl border border-lex-blue/25 bg-gradient-to-br from-lex-blue/12 via-card to-lex-green/12 p-4 shadow-lg shadow-lex-orange/10 ring-1 ring-lex-orange/15">
         <h1 className="text-2xl font-semibold tracking-tight">Movimentos</h1>
         <p className="text-sm text-muted-foreground">Registe entradas e saídas num só lugar — toque numa linha para editar.</p>
       </div>
@@ -24,8 +24,8 @@ export default function MovimentosLayout() {
                 'min-h-11 flex-1 rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition-all touch-manipulation',
                 isActive
                   ? to === 'receitas'
-                    ? 'bg-emerald-500/20 text-emerald-200 shadow-inner ring-1 ring-emerald-400/30'
-                    : 'bg-rose-500/20 text-rose-100 shadow-inner ring-1 ring-rose-400/30'
+                    ? 'bg-lex-green/20 text-green-200 shadow-inner ring-1 ring-lex-green/35'
+                    : 'bg-lex-orange/20 text-orange-100 shadow-inner ring-1 ring-lex-orange/40'
                   : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
               )
             }

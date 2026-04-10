@@ -217,7 +217,7 @@ export default function Dashboard() {
                   contentStyle={{ background: 'hsl(222 40% 10%)', border: '1px solid hsl(217 33% 20%)' }}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="net" name="Saldo líquido mês" stroke="hsl(199 89% 48%)" dot={false} />
+                <Line type="monotone" dataKey="net" name="Saldo líquido mês" stroke="var(--chart-blue)" dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -236,7 +236,7 @@ export default function Dashboard() {
                 <XAxis dataKey="name" tick={{ fill: 'hsl(215 20% 65%)', fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={70} />
                 <YAxis tick={{ fill: 'hsl(215 20% 65%)', fontSize: 11 }} />
                 <Tooltip formatter={(v: number) => brl(v)} />
-                <Bar dataKey="value" fill="hsl(172 66% 40%)" name="Valor" />
+                <Bar dataKey="value" fill="var(--chart-green)" name="Valor" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -252,7 +252,7 @@ export default function Dashboard() {
                 <XAxis dataKey="name" tick={{ fill: 'hsl(215 20% 65%)', fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={70} />
                 <YAxis tick={{ fill: 'hsl(215 20% 65%)', fontSize: 11 }} />
                 <Tooltip formatter={(v: number) => brl(v)} />
-                <Bar dataKey="value" fill="hsl(199 89% 48%)" name="Valor" />
+                <Bar dataKey="value" fill="var(--chart-blue)" name="Valor" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

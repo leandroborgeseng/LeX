@@ -384,8 +384,8 @@ export default function Cdb() {
                   contentStyle={{ background: 'hsl(222 40% 10%)', border: '1px solid hsl(217 33% 20%)' }}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="líquido" name="Líquido (após IR)" stroke="hsl(199 89% 48%)" dot={false} strokeWidth={2} />
-                <Line type="monotone" dataKey="bruto" name="Bruto" stroke="hsl(172 66% 40%)" dot={false} strokeWidth={1} />
+                <Line type="monotone" dataKey="líquido" name="Líquido (após IR)" stroke="var(--chart-blue)" dot={false} strokeWidth={2} />
+                <Line type="monotone" dataKey="bruto" name="Bruto" stroke="var(--chart-green)" dot={false} strokeWidth={1} />
                 <Line type="monotone" dataKey="ir" name="IR (acum.)" stroke="hsl(0 72% 51%)" dot={false} strokeWidth={1} />
               </LineChart>
             </ResponsiveContainer>

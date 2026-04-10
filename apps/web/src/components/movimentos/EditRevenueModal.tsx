@@ -138,7 +138,7 @@ export function EditRevenueModal({
         </div>
         {row && (
           <form className="grid gap-4 sm:grid-cols-2" onSubmit={save}>
-            <p className="sm:col-span-2 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-xs leading-relaxed text-emerald-100/90">
+            <p className="sm:col-span-2 rounded-lg border border-lex-green/30 bg-lex-green/12 px-3 py-2 text-xs leading-relaxed text-green-100/90">
               <strong>Orçamento:</strong> em <strong>Previsto</strong> o valor entra nas projeções; em{' '}
               <strong>Recebido (realizado)</strong> o líquido passa a contar no <strong>saldo da conta destino</strong>.
               Ajuste bruto, impostos ou líquido antes de guardar se o valor real for diferente.

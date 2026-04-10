@@ -123,7 +123,9 @@ export function AppShell() {
       <aside className="relative hidden w-60 shrink-0 border-r border-border bg-card/50 md:block">
         <div className="flex h-14 items-center gap-2 border-b border-border px-3 font-semibold tracking-tight">
           <LexMark />
-          <span className="truncate text-sm text-muted-foreground">Finance</span>
+          <span className="truncate bg-gradient-to-r from-lex-blue to-lex-orange bg-clip-text text-sm font-medium text-transparent">
+            Finance
+          </span>
         </div>
         <nav className="max-h-[calc(100vh-7rem)] space-y-0.5 overflow-y-auto p-2">
           {nav.map((item) => (

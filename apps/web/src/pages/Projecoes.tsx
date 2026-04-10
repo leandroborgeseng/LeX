@@ -58,12 +58,12 @@ export default function Projecoes() {
                 formatter={(v: number) => brl(v)}
                 contentStyle={{ background: 'hsl(222 40% 10%)', border: '1px solid hsl(217 33% 20%)' }}
               />
-              <Line type="monotone" dataKey="base" name="Cenário base" stroke="hsl(199 89% 48%)" dot={false} />
+              <Line type="monotone" dataKey="base" name="Cenário base" stroke="var(--chart-blue)" dot={false} />
               <Line
                 type="monotone"
                 dataKey="conservative"
                 name="Conservador"
-                stroke="hsl(172 66% 40%)"
+                stroke="var(--chart-green)"
                 dot={false}
               />
             </LineChart>

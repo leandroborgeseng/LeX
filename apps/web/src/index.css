@@ -4,23 +4,38 @@
 
 @layer base {
   :root {
-    --background: 222 47% 8%;
-    --foreground: 210 40% 98%;
-    --card: 222 42% 12%;
+    /* Base escura com fundo azul-profundo */
+    --background: 222 52% 6%;
+    --foreground: 210 40% 99%;
+    --card: 220 45% 10%;
     --card-foreground: 210 40% 98%;
-    --primary: 199 95% 52%;
-    --primary-foreground: 222 47% 8%;
-    --secondary: 262 45% 22%;
+    /* Ações principais — azul vivo */
+    --primary: 204 100% 48%;
+    --primary-foreground: 222 52% 6%;
+    /* Painéis secundários — verde-azulado escuro */
+    --secondary: 196 45% 16%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217 28% 18%;
-    --muted-foreground: 215 20% 68%;
-    --accent: 160 72% 42%;
-    --accent-foreground: 210 40% 98%;
+    --muted: 218 32% 14%;
+    --muted-foreground: 215 22% 72%;
+    /* Destaques / hovers — laranja aeronáutico (alta visibilidade) */
+    --accent: 22 100% 54%;
+    --accent-foreground: 222 52% 7%;
     --destructive: 350 78% 56%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217 30% 22%;
-    --input: 217 30% 22%;
-    --ring: 199 95% 52%;
+    --border: 215 35% 18%;
+    --input: 215 35% 18%;
+    --ring: 22 100% 54%;
+
+    /* Tokens de marca (HSL sem função — para Tailwind lex-* / <alpha-value>) */
+    --lex-blue: 204 100% 48%;
+    --lex-orange: 22 100% 54%;
+    --lex-green: 158 82% 42%;
+
+    /* Gráficos (hex para Recharts) */
+    --chart-blue: #0ea5e9;
+    --chart-green: #10b981;
+    --chart-orange: #ff7a1a;
+
     --radius: 0.65rem;
   }
   * {
@@ -29,9 +44,10 @@
   body {
     @apply min-h-[100dvh] bg-background text-foreground antialiased;
     background-image:
-      radial-gradient(ellipse 120% 80% at 10% -10%, hsl(199 95% 52% / 0.12), transparent 50%),
-      radial-gradient(ellipse 90% 60% at 100% 0%, hsl(262 80% 60% / 0.1), transparent 45%),
-      radial-gradient(ellipse 70% 50% at 50% 100%, hsl(160 72% 42% / 0.08), transparent 55%);
+      radial-gradient(ellipse 130% 90% at 0% -5%, hsl(var(--lex-blue) / 0.18), transparent 52%),
+      radial-gradient(ellipse 100% 70% at 100% 0%, hsl(var(--lex-orange) / 0.14), transparent 48%),
+      radial-gradient(ellipse 80% 55% at 50% 105%, hsl(var(--lex-green) / 0.12), transparent 58%),
+      radial-gradient(ellipse 50% 40% at 85% 60%, hsl(var(--lex-blue) / 0.06), transparent 45%);
   }
   button,
   a,

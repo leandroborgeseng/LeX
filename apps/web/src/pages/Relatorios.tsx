@@ -176,8 +176,8 @@ export default function Relatorios() {
                   contentStyle={{ background: 'hsl(222 40% 10%)', border: '1px solid hsl(217 33% 20%)' }}
                 />
                 <Legend />
-                <Bar dataKey="Receita" fill="hsl(199 89% 48%)" />
-                <Bar dataKey="Despesas" fill="hsl(172 66% 40%)" />
+                <Bar dataKey="Receita" fill="var(--chart-green)" />
+                <Bar dataKey="Despesas" fill="var(--chart-orange)" />
               </BarChart>
             </ResponsiveContainer>
           </div>

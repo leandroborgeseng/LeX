@@ -34,6 +34,12 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        /** Marca LeX: azul + laranja aeronáutico + verde (use com /opacity, ex. lex-orange/40) */
+        lex: {
+          blue: 'hsl(var(--lex-blue) / <alpha-value>)',
+          orange: 'hsl(var(--lex-orange) / <alpha-value>)',
+          green: 'hsl(var(--lex-green) / <alpha-value>)',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',

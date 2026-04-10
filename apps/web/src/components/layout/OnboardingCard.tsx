@@ -49,7 +49,7 @@ export function OnboardingCard() {
   if (allDone) return null;
 
   return (
-    <Card className="border-primary/30 bg-primary/5">
+    <Card className="border-lex-blue/35 bg-gradient-to-br from-lex-blue/12 via-card to-lex-green/10 ring-1 ring-lex-orange/25">
       <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-2">
         <CardTitle className="text-base font-semibold">Primeiros passos</CardTitle>
         <Button
