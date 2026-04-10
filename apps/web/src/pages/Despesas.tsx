@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '@/lib/api';
+import { usePreferences } from '@/lib/preferences';
 import { brl, formatDateBr, isDueWithinDaysFromToday, todayDateInputValue } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,7 @@ type Exp = {
 };
 
 export default function Despesas() {
+  const { entityFilterId } = usePreferences();
   const [searchParams, setSearchParams] = useSearchParams();
   const listFilter = searchParams.get('filter');
 
@@ -49,13 +51,16 @@ export default function Despesas() {
   const [future, setFuture] = useState('12');
 
   async function load() {
+    const expPath = entityFilterId
+      ? `/expenses?financialEntityId=${encodeURIComponent(entityFilterId)}`
+      : '/expenses';
     const [e, c, m, a, cd, ex] = await Promise.all([
       api.get<Entity[]>('/financial-entities'),
       api.get<Cat[]>('/categories?kind=EXPENSE'),
       api.get<Member[]>('/household-members'),
       api.get<Account[]>('/bank-accounts'),
       api.get<CardRow[]>('/credit-cards'),
-      api.get<Exp[]>('/expenses'),
+      api.get<Exp[]>(expPath),
     ]);
     setEntities(e.data);
     setCats(c.data);
@@ -63,12 +68,16 @@ export default function Despesas() {
     setAccounts(a.data);
     setCards(cd.data);
     setRows(ex.data);
-    if (!financialEntityId && e.data[0]) setFinancialEntityId(e.data[0].id);
+    if (entityFilterId && e.data.some((x) => x.id === entityFilterId)) {
+      setFinancialEntityId(entityFilterId);
+    } else if (e.data[0]) {
+      setFinancialEntityId(e.data[0].id);
+    }
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [entityFilterId]);
 
   const displayRows = useMemo(() => {
     if (listFilter !== 'proximos') return rows;

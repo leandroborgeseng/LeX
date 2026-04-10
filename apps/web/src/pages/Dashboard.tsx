@@ -14,8 +14,10 @@ import {
 } from 'recharts';
 import api from '@/lib/api';
 import { brl } from '@/lib/format';
+import { usePreferences } from '@/lib/preferences';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { OnboardingCard } from '@/components/layout/OnboardingCard';
 
 type Summary = {
   balances: { pf: number; pj: number; consolidated: number };
@@ -37,14 +39,18 @@ type Summary = {
   upcoming: { revenues: unknown[]; expenses: unknown[] };
   activeContracts: { id: string; clientName: string }[];
   creditCards: { name: string; monthTotal: number; limit: number | null }[];
+  filterEntity: { id: string; name: string; type: string } | null;
 };
 
 export default function Dashboard() {
+  const { entityFilterId } = usePreferences();
   const [s, setS] = useState<Summary | null>(null);
 
   useEffect(() => {
-    api.get<Summary>('/dashboard/summary').then((r) => setS(r.data));
-  }, []);
+    setS(null);
+    const q = entityFilterId ? `?financialEntityId=${encodeURIComponent(entityFilterId)}` : '';
+    api.get<Summary>(`/dashboard/summary${q}`).then((r) => setS(r.data));
+  }, [entityFilterId]);
 
   if (!s) {
     return <p className="text-muted-foreground">Carregando dashboard…</p>;
@@ -62,7 +68,15 @@ export default function Dashboard() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-sm text-muted-foreground">Visão consolidada e projeções do período</p>
+        {s.filterEntity && (
+          <p className="mt-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-foreground">
+            A mostrar apenas a entidade <strong>{s.filterEntity.name}</strong> ({s.filterEntity.type}). Altere no seletor
+            no topo da página para ver tudo.
+          </p>
+        )}
       </div>
+
+      <OnboardingCard />
 
       <Card>
         <CardHeader className="pb-3">

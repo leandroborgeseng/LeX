@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   ContractStatus,
   EntityType,
@@ -16,17 +16,30 @@ export class DashboardService {
     private readonly balance: BalanceService,
   ) {}
 
-  async summary() {
+  async summary(financialEntityId?: string) {
+    const scoped = financialEntityId
+      ? await this.prisma.financialEntity.findUnique({ where: { id: financialEntityId } })
+      : null;
+    if (financialEntityId && !scoped) {
+      throw new BadRequestException('Entidade não encontrada');
+    }
+
+    const ew = scoped ? { financialEntityId: scoped.id } : {};
+
     const now = new Date();
     const y = now.getFullYear();
     const m = now.getMonth() + 1;
     const start = startOfMonth(now);
     const end = endOfMonth(now);
-    const balances = await this.balance.entityTypeTotals();
-    const entities = await this.prisma.financialEntity.findMany();
 
-    const pfIds = entities.filter((e) => e.type === EntityType.PF).map((e) => e.id);
-    const pjIds = entities.filter((e) => e.type === EntityType.PJ).map((e) => e.id);
+    const balances = scoped
+      ? await (async () => {
+          const t = await this.balance.entityBankTotal(scoped.id);
+          return scoped.type === EntityType.PF
+            ? { pf: t, pj: 0, consolidated: t }
+            : { pf: 0, pj: t, consolidated: t };
+        })()
+      : await this.balance.entityTypeTotals();
 
     const revWhere = {
       competenceDate: { gte: start, lte: end },
@@ -37,29 +50,59 @@ export class DashboardService {
       status: { in: [ExpenseStatus.PREVISTO, ExpenseStatus.PAGO, ExpenseStatus.ATRASADO] },
     };
 
-    const [revPf, revPj, expPf, expPj] = await Promise.all([
-      this.prisma.revenue.aggregate({
-        where: { ...revWhere, financialEntityId: { in: pfIds } },
-        _sum: { netAmount: true },
-      }),
-      this.prisma.revenue.aggregate({
-        where: { ...revWhere, financialEntityId: { in: pjIds } },
-        _sum: { netAmount: true },
-      }),
-      this.prisma.expense.aggregate({
-        where: { ...expWhere, financialEntityId: { in: pfIds } },
-        _sum: { amount: true },
-      }),
-      this.prisma.expense.aggregate({
-        where: { ...expWhere, financialEntityId: { in: pjIds } },
-        _sum: { amount: true },
-      }),
-    ]);
+    let rPf = 0;
+    let rPj = 0;
+    let ePf = 0;
+    let ePj = 0;
 
-    const rPf = Number(revPf._sum.netAmount ?? 0);
-    const rPj = Number(revPj._sum.netAmount ?? 0);
-    const ePf = Number(expPf._sum.amount ?? 0);
-    const ePj = Number(expPj._sum.amount ?? 0);
+    if (scoped) {
+      const [rev, exp] = await Promise.all([
+        this.prisma.revenue.aggregate({
+          where: { ...revWhere, ...ew },
+          _sum: { netAmount: true },
+        }),
+        this.prisma.expense.aggregate({
+          where: { ...expWhere, ...ew },
+          _sum: { amount: true },
+        }),
+      ]);
+      const r = Number(rev._sum.netAmount ?? 0);
+      const ex = Number(exp._sum.amount ?? 0);
+      if (scoped.type === EntityType.PF) {
+        rPf = r;
+        ePf = ex;
+      } else {
+        rPj = r;
+        ePj = ex;
+      }
+    } else {
+      const entities = await this.prisma.financialEntity.findMany();
+      const pfIds = entities.filter((e) => e.type === EntityType.PF).map((e) => e.id);
+      const pjIds = entities.filter((e) => e.type === EntityType.PJ).map((e) => e.id);
+
+      const [revPf, revPj, expPfAgg, expPjAgg] = await Promise.all([
+        this.prisma.revenue.aggregate({
+          where: { ...revWhere, financialEntityId: { in: pfIds } },
+          _sum: { netAmount: true },
+        }),
+        this.prisma.revenue.aggregate({
+          where: { ...revWhere, financialEntityId: { in: pjIds } },
+          _sum: { netAmount: true },
+        }),
+        this.prisma.expense.aggregate({
+          where: { ...expWhere, financialEntityId: { in: pfIds } },
+          _sum: { amount: true },
+        }),
+        this.prisma.expense.aggregate({
+          where: { ...expWhere, financialEntityId: { in: pjIds } },
+          _sum: { amount: true },
+        }),
+      ]);
+      rPf = Number(revPf._sum.netAmount ?? 0);
+      rPj = Number(revPj._sum.netAmount ?? 0);
+      ePf = Number(expPfAgg._sum.amount ?? 0);
+      ePj = Number(expPjAgg._sum.amount ?? 0);
+    }
 
     const yearStart = new Date(y, 0, 1);
     const yearEnd = new Date(y, 11, 31, 23, 59, 59, 999);
@@ -71,28 +114,60 @@ export class DashboardService {
       competenceDate: { gte: yearStart, lte: yearEnd },
       status: { in: [ExpenseStatus.PREVISTO, ExpenseStatus.PAGO, ExpenseStatus.ATRASADO] },
     };
-    const [revYrPf, revYrPj, expYrPf, expYrPj] = await Promise.all([
-      this.prisma.revenue.aggregate({
-        where: { ...revYearWhere, financialEntityId: { in: pfIds } },
-        _sum: { netAmount: true },
-      }),
-      this.prisma.revenue.aggregate({
-        where: { ...revYearWhere, financialEntityId: { in: pjIds } },
-        _sum: { netAmount: true },
-      }),
-      this.prisma.expense.aggregate({
-        where: { ...expYearWhere, financialEntityId: { in: pfIds } },
-        _sum: { amount: true },
-      }),
-      this.prisma.expense.aggregate({
-        where: { ...expYearWhere, financialEntityId: { in: pjIds } },
-        _sum: { amount: true },
-      }),
-    ]);
-    const ryPf = Number(revYrPf._sum.netAmount ?? 0);
-    const ryPj = Number(revYrPj._sum.netAmount ?? 0);
-    const eyPf = Number(expYrPf._sum.amount ?? 0);
-    const eyPj = Number(expYrPj._sum.amount ?? 0);
+
+    let ryPf = 0;
+    let ryPj = 0;
+    let eyPf = 0;
+    let eyPj = 0;
+
+    if (scoped) {
+      const [rev, exp] = await Promise.all([
+        this.prisma.revenue.aggregate({
+          where: { ...revYearWhere, ...ew },
+          _sum: { netAmount: true },
+        }),
+        this.prisma.expense.aggregate({
+          where: { ...expYearWhere, ...ew },
+          _sum: { amount: true },
+        }),
+      ]);
+      const r = Number(rev._sum.netAmount ?? 0);
+      const ex = Number(exp._sum.amount ?? 0);
+      if (scoped.type === EntityType.PF) {
+        ryPf = r;
+        eyPf = ex;
+      } else {
+        ryPj = r;
+        eyPj = ex;
+      }
+    } else {
+      const entities = await this.prisma.financialEntity.findMany();
+      const pfIds = entities.filter((e) => e.type === EntityType.PF).map((e) => e.id);
+      const pjIds = entities.filter((e) => e.type === EntityType.PJ).map((e) => e.id);
+
+      const [revYrPf, revYrPj, expYrPf, expYrPj] = await Promise.all([
+        this.prisma.revenue.aggregate({
+          where: { ...revYearWhere, financialEntityId: { in: pfIds } },
+          _sum: { netAmount: true },
+        }),
+        this.prisma.revenue.aggregate({
+          where: { ...revYearWhere, financialEntityId: { in: pjIds } },
+          _sum: { netAmount: true },
+        }),
+        this.prisma.expense.aggregate({
+          where: { ...expYearWhere, financialEntityId: { in: pfIds } },
+          _sum: { amount: true },
+        }),
+        this.prisma.expense.aggregate({
+          where: { ...expYearWhere, financialEntityId: { in: pjIds } },
+          _sum: { amount: true },
+        }),
+      ]);
+      ryPf = Number(revYrPf._sum.netAmount ?? 0);
+      ryPj = Number(revYrPj._sum.netAmount ?? 0);
+      eyPf = Number(expYrPf._sum.amount ?? 0);
+      eyPj = Number(expYrPj._sum.amount ?? 0);
+    }
 
     const horizon = new Date();
     horizon.setDate(horizon.getDate() + 30);
@@ -101,6 +176,7 @@ export class DashboardService {
         where: {
           dueDate: { gte: now, lte: horizon },
           status: { in: [RevenueStatus.PREVISTO, RevenueStatus.ATRASADO] },
+          ...ew,
         },
         orderBy: { dueDate: 'asc' },
         take: 15,
@@ -110,6 +186,7 @@ export class DashboardService {
         where: {
           dueDate: { gte: now, lte: horizon },
           status: { in: [ExpenseStatus.PREVISTO, ExpenseStatus.ATRASADO] },
+          ...ew,
         },
         orderBy: { dueDate: 'asc' },
         take: 15,
@@ -119,8 +196,11 @@ export class DashboardService {
         where: { status: ContractStatus.ATIVO },
         orderBy: { clientName: 'asc' },
       }),
-      this.prisma.financing.aggregate({ _sum: { currentBalance: true } }),
-      this.prisma.creditCard.findMany({ where: { active: true } }),
+      this.prisma.financing.aggregate({
+        where: scoped ? { financialEntityId: scoped.id } : {},
+        _sum: { currentBalance: true },
+      }),
+      this.prisma.creditCard.findMany({ where: { active: true, ...ew } }),
     ]);
 
     const cardSummaries = await Promise.all(
@@ -137,10 +217,11 @@ export class DashboardService {
       }),
     );
 
-    const cashflow = await this.projectCashflowMonths(12);
-    const expByCat = await this.expensesByCategoryMonth(start, end);
-    const expByOrig = await this.expensesByOriginatorMonth(start, end);
-    const revBySource = await this.revenuesByPayerMonth(start, end);
+    const entityIdForCharts = scoped?.id;
+    const cashflow = await this.projectCashflowMonths(12, entityIdForCharts);
+    const expByCat = await this.expensesByCategoryMonth(start, end, entityIdForCharts);
+    const expByOrig = await this.expensesByOriginatorMonth(start, end, entityIdForCharts);
+    const revBySource = await this.revenuesByPayerMonth(start, end, entityIdForCharts);
 
     return {
       balances,
@@ -170,10 +251,14 @@ export class DashboardService {
         expensesByOriginator: expByOrig,
         revenuesByPayer: revBySource,
       },
+      filterEntity: scoped
+        ? { id: scoped.id, name: scoped.name, type: scoped.type as string }
+        : null,
     };
   }
 
-  private async projectCashflowMonths(count: number) {
+  private async projectCashflowMonths(count: number, entityId?: string) {
+    const ew = entityId ? { financialEntityId: entityId } : {};
     const now = new Date();
     const rows: { year: number; month: number; inflow: number; outflow: number; net: number }[] =
       [];
@@ -188,6 +273,7 @@ export class DashboardService {
             status: {
               in: [RevenueStatus.PREVISTO, RevenueStatus.RECEBIDO, RevenueStatus.ATRASADO],
             },
+            ...ew,
           },
           _sum: { netAmount: true },
         }),
@@ -197,6 +283,7 @@ export class DashboardService {
             status: {
               in: [ExpenseStatus.PREVISTO, ExpenseStatus.PAGO, ExpenseStatus.ATRASADO],
             },
+            ...ew,
           },
           _sum: { amount: true },
         }),
@@ -214,9 +301,10 @@ export class DashboardService {
     return rows;
   }
 
-  private async expensesByCategoryMonth(start: Date, end: Date) {
+  private async expensesByCategoryMonth(start: Date, end: Date, entityId?: string) {
+    const ew = entityId ? { financialEntityId: entityId } : {};
     const list = await this.prisma.expense.findMany({
-      where: { competenceDate: { gte: start, lte: end } },
+      where: { competenceDate: { gte: start, lte: end }, ...ew },
       include: { category: true },
     });
     const map = new Map<string, number>();
@@ -227,9 +315,10 @@ export class DashboardService {
     return Array.from(map.entries()).map(([name, value]) => ({ name, value }));
   }
 
-  private async expensesByOriginatorMonth(start: Date, end: Date) {
+  private async expensesByOriginatorMonth(start: Date, end: Date, entityId?: string) {
+    const ew = entityId ? { financialEntityId: entityId } : {};
     const list = await this.prisma.expense.findMany({
-      where: { competenceDate: { gte: start, lte: end } },
+      where: { competenceDate: { gte: start, lte: end }, ...ew },
       include: { originator: true },
     });
     const map = new Map<string, number>();
@@ -240,9 +329,10 @@ export class DashboardService {
     return Array.from(map.entries()).map(([name, value]) => ({ name, value }));
   }
 
-  private async revenuesByPayerMonth(start: Date, end: Date) {
+  private async revenuesByPayerMonth(start: Date, end: Date, entityId?: string) {
+    const ew = entityId ? { financialEntityId: entityId } : {};
     const list = await this.prisma.revenue.findMany({
-      where: { competenceDate: { gte: start, lte: end } },
+      where: { competenceDate: { gte: start, lte: end }, ...ew },
       include: { payerSource: true },
     });
     const map = new Map<string, number>();

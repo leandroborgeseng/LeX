@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import api from '@/lib/api';
 import { apiErrorMessage } from '@/lib/api-error';
+import { usePreferences } from '@/lib/preferences';
 import { brl, formatDateBr, isDueWithinDaysFromToday, todayDateInputValue } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +26,7 @@ type Rev = {
 };
 
 export default function Receitas() {
+  const { entityFilterId } = usePreferences();
   const [searchParams, setSearchParams] = useSearchParams();
   const listFilter = searchParams.get('filter');
 
@@ -50,24 +52,31 @@ export default function Receitas() {
   const [queueHint, setQueueHint] = useState('');
 
   async function load() {
+    const revPath = entityFilterId
+      ? `/revenues?financialEntityId=${encodeURIComponent(entityFilterId)}`
+      : '/revenues';
     const [e, c, p, a, r] = await Promise.all([
       api.get<Entity[]>('/financial-entities'),
       api.get<Cat[]>('/categories?kind=REVENUE'),
       api.get<Payer[]>('/payer-sources'),
       api.get<Account[]>('/bank-accounts'),
-      api.get<Rev[]>('/revenues'),
+      api.get<Rev[]>(revPath),
     ]);
     setEntities(e.data);
     setCats(c.data);
     setPayers(p.data);
     setAccounts(a.data);
     setRows(r.data);
-    if (!financialEntityId && e.data[0]) setFinancialEntityId(e.data[0].id);
+    if (entityFilterId && e.data.some((x) => x.id === entityFilterId)) {
+      setFinancialEntityId(entityFilterId);
+    } else if (e.data[0]) {
+      setFinancialEntityId(e.data[0].id);
+    }
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [entityFilterId]);
 
   const displayRows = useMemo(() => {
     if (listFilter !== 'proximos') return rows;

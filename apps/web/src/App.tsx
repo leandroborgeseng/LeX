@@ -22,6 +22,7 @@ import Relatorios from '@/pages/Relatorios';
 import Projecoes from '@/pages/Projecoes';
 import Cdb from '@/pages/Cdb';
 import Estrutura from '@/pages/Estrutura';
+import { PreferencesProvider } from '@/lib/preferences';
 
 function Protected({ children }: { children: ReactNode }) {
   const t = localStorage.getItem('lex_token');
@@ -37,7 +38,9 @@ export default function App() {
         <Route
           element={
             <Protected>
-              <AppShell />
+              <PreferencesProvider>
+                <AppShell />
+              </PreferencesProvider>
             </Protected>
           }
         >
