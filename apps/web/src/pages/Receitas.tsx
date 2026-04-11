@@ -192,7 +192,7 @@ export default function Receitas() {
       />
 
       {listFilter === 'proximos' && (
-        <div className="flex flex-col gap-2 rounded-xl border border-lex-green/40 bg-lex-green/12 px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50/90 px-3 py-3 text-sm text-slate-800 sm:flex-row sm:items-center sm:justify-between">
           <span>
             A mostrar apenas receitas <strong>previstas ou atrasadas</strong> com vencimento nos próximos{' '}
             <strong>30 dias</strong>.
@@ -206,12 +206,12 @@ export default function Receitas() {
         <p className="rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-primary">{queueHint}</p>
       )}
       {listActionMsg && (
-        <p className="rounded-md border border-lex-green/40 bg-lex-green/12 px-3 py-2 text-sm text-lex-green/95">{listActionMsg}</p>
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{listActionMsg}</p>
       )}
 
-      <Card className="border-lex-green/30 shadow-md shadow-lex-green/10">
-        <CardHeader className="rounded-t-xl border-b border-lex-green/20 bg-gradient-to-r from-lex-green/18 to-lex-blue/12">
-          <CardTitle className="text-base text-lex-green/95">Filtros da lista</CardTitle>
+      <Card className="border-emerald-200/80 shadow-sm shadow-emerald-500/10">
+        <CardHeader className="rounded-t-xl border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-sky-50 to-amber-50/60">
+          <CardTitle className="text-base text-slate-800">Filtros da lista</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 pt-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2 sm:col-span-2 lg:col-span-1">
@@ -301,9 +301,9 @@ export default function Receitas() {
         </CardContent>
       </Card>
 
-      <Card className="border-lex-green/25 shadow-lg shadow-lex-green/10">
-        <CardHeader className="rounded-t-xl border-b border-lex-green/15 bg-gradient-to-r from-lex-green/14 to-transparent">
-          <CardTitle className="text-base text-white">Nova receita</CardTitle>
+      <Card className="border-emerald-200/80 shadow-md shadow-emerald-500/10">
+        <CardHeader className="rounded-t-xl border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-sky-50">
+          <CardTitle className="text-base text-slate-800">Nova receita</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
           <form onSubmit={create} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -432,9 +432,9 @@ export default function Receitas() {
         </CardContent>
       </Card>
 
-      <Card className="border-lex-blue/25 shadow-lg shadow-lex-blue/10">
-        <CardHeader className="rounded-t-xl border-b border-lex-blue/15 bg-gradient-to-r from-lex-blue/14 to-transparent">
-          <CardTitle className="text-base text-lex-blue/95">
+      <Card className="border-sky-200/80 shadow-md shadow-sky-500/10">
+        <CardHeader className="rounded-t-xl border-b border-sky-100 bg-gradient-to-r from-sky-50 via-white to-emerald-50/70">
+          <CardTitle className="text-base text-slate-800">
             {listFilter === 'proximos' ? 'Receitas a vencer (filtro)' : 'Receitas'}
             <span className="ml-2 text-xs font-normal text-muted-foreground">
               — clique para editar; ✓ marca como recebido sem abrir o editor
@@ -461,7 +461,7 @@ export default function Receitas() {
                 {displayRows.slice(0, 80).map((r) => (
                   <TR
                     key={r.id}
-                    className={cn('cursor-pointer transition-colors hover:bg-lex-green/12')}
+                    className={cn('cursor-pointer transition-colors hover:bg-emerald-50/90')}
                     onClick={() => openEdit(r)}
                   >
                     <TD className="text-center" onClick={(e) => e.stopPropagation()}>
@@ -486,7 +486,7 @@ export default function Receitas() {
                     <TD>{r.description}</TD>
                     <TD>{formatDateBr(r.competenceDate)}</TD>
                     <TD>{formatDateBr(r.dueDate)}</TD>
-                    <TD className="font-medium text-green-300">{brl(parseFloat(r.netAmount))}</TD>
+                    <TD className="font-medium text-emerald-700">{brl(parseFloat(r.netAmount))}</TD>
                     <TD>
                       <span className="rounded-full bg-muted/80 px-2 py-0.5 text-xs">{r.status}</span>
                     </TD>
@@ -500,15 +500,15 @@ export default function Receitas() {
               <li key={r.id} className="flex gap-2">
                 <button
                   type="button"
-                  className="min-w-0 flex-1 rounded-xl border border-lex-green/30 bg-gradient-to-br from-lex-green/12 to-card px-3 py-3 text-left text-sm shadow-md transition hover:border-lex-orange/45"
+                  className="min-w-0 flex-1 rounded-xl border border-emerald-200 bg-gradient-to-br from-white to-emerald-50/50 px-3 py-3 text-left text-sm shadow-sm transition hover:border-orange-300 hover:shadow-md"
                   onClick={() => openEdit(r)}
                 >
-                  <p className="font-medium leading-snug text-white">{r.description}</p>
+                  <p className="font-medium leading-snug text-slate-900">{r.description}</p>
                   <p className="mt-1 text-muted-foreground">
                     {formatDateBr(r.competenceDate)} · venc. {formatDateBr(r.dueDate)}
                   </p>
                   <p className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-base font-semibold text-green-300">{brl(parseFloat(r.netAmount))}</span>
+                    <span className="text-base font-semibold text-emerald-700">{brl(parseFloat(r.netAmount))}</span>
                     <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{r.status}</span>
                   </p>
                 </button>

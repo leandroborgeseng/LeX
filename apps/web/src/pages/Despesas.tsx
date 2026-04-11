@@ -184,7 +184,7 @@ export default function Despesas() {
       />
 
       {listFilter === 'proximos' && (
-        <div className="flex flex-col gap-2 rounded-xl border border-lex-orange/40 bg-lex-orange/12 px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 rounded-xl border border-orange-200 bg-orange-50/90 px-3 py-3 text-sm text-slate-800 sm:flex-row sm:items-center sm:justify-between">
           <span>
             A mostrar apenas despesas <strong>previstas ou atrasadas</strong> com vencimento nos próximos{' '}
             <strong>30 dias</strong>.
@@ -195,12 +195,12 @@ export default function Despesas() {
         </div>
       )}
       {listActionMsg && (
-        <p className="rounded-md border border-lex-orange/40 bg-lex-orange/12 px-3 py-2 text-sm text-orange-100">{listActionMsg}</p>
+        <p className="rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-orange-900">{listActionMsg}</p>
       )}
 
-      <Card className="border-lex-orange/30 shadow-md shadow-lex-orange/10">
-        <CardHeader className="rounded-t-xl border-b border-lex-orange/20 bg-gradient-to-r from-lex-orange/18 to-lex-blue/12">
-          <CardTitle className="text-base text-orange-100">Filtros da lista</CardTitle>
+      <Card className="border-orange-200/80 shadow-sm shadow-orange-500/10">
+        <CardHeader className="rounded-t-xl border-b border-orange-100 bg-gradient-to-r from-orange-50 via-amber-50/80 to-sky-50">
+          <CardTitle className="text-base text-slate-800">Filtros da lista</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 pt-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2 sm:col-span-2 lg:col-span-1">
@@ -338,9 +338,9 @@ export default function Despesas() {
         </CardContent>
       </Card>
 
-      <Card className="border-lex-orange/25 shadow-lg shadow-lex-orange/10">
-        <CardHeader className="rounded-t-xl border-b border-lex-orange/15 bg-gradient-to-r from-lex-orange/14 to-transparent">
-          <CardTitle className="text-base text-white">Nova despesa</CardTitle>
+      <Card className="border-orange-200/80 shadow-md shadow-orange-500/10">
+        <CardHeader className="rounded-t-xl border-b border-orange-100 bg-gradient-to-r from-orange-50 via-white to-sky-50">
+          <CardTitle className="text-base text-slate-800">Nova despesa</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
           <form onSubmit={create} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -491,9 +491,9 @@ export default function Despesas() {
         </CardContent>
       </Card>
 
-      <Card className="border-lex-blue/25 shadow-lg shadow-lex-blue/10">
-        <CardHeader className="rounded-t-xl border-b border-lex-blue/15 bg-gradient-to-r from-lex-blue/14 to-transparent">
-          <CardTitle className="text-base text-lex-blue/95">
+      <Card className="border-sky-200/80 shadow-md shadow-sky-500/10">
+        <CardHeader className="rounded-t-xl border-b border-sky-100 bg-gradient-to-r from-sky-50 via-white to-orange-50/70">
+          <CardTitle className="text-base text-slate-800">
             {listFilter === 'proximos' ? 'Despesas a vencer (filtro)' : 'Despesas'}
             <span className="ml-2 text-xs font-normal text-muted-foreground">
               — clique para editar; ✓ marca como pago sem abrir o editor
@@ -521,7 +521,7 @@ export default function Despesas() {
                 {displayRows.slice(0, 80).map((r) => (
                   <TR
                     key={r.id}
-                    className={cn('cursor-pointer transition-colors hover:bg-lex-orange/12')}
+                    className={cn('cursor-pointer transition-colors hover:bg-orange-50/90')}
                     onClick={() => openEdit(r)}
                   >
                     <TD className="text-center" onClick={(e) => e.stopPropagation()}>
@@ -537,7 +537,7 @@ export default function Despesas() {
                             void markAsPaid(r.id);
                           }}
                         >
-                          <CheckCircle2 className="h-4 w-4 text-orange-300" />
+                          <CheckCircle2 className="h-4 w-4 text-orange-600" />
                         </Button>
                       ) : (
                         <span className="text-muted-foreground">—</span>
@@ -546,7 +546,7 @@ export default function Despesas() {
                     <TD>{r.description}</TD>
                     <TD>{formatDateBr(r.competenceDate)}</TD>
                     <TD>{formatDateBr(r.dueDate)}</TD>
-                    <TD className="font-medium text-orange-200">{brl(parseFloat(r.amount))}</TD>
+                    <TD className="font-medium text-orange-700">{brl(parseFloat(r.amount))}</TD>
                     <TD className="text-xs text-muted-foreground">{r.paymentMethod}</TD>
                     <TD>
                       <span className="rounded-full bg-muted/80 px-2 py-0.5 text-xs">{r.status}</span>
@@ -561,15 +561,15 @@ export default function Despesas() {
               <li key={r.id} className="flex gap-2">
                 <button
                   type="button"
-                  className="min-w-0 flex-1 rounded-xl border border-lex-orange/30 bg-gradient-to-br from-lex-orange/12 to-card px-3 py-3 text-left text-sm shadow-md transition hover:border-lex-blue/45"
+                  className="min-w-0 flex-1 rounded-xl border border-orange-200 bg-gradient-to-br from-white to-orange-50/50 px-3 py-3 text-left text-sm shadow-sm transition hover:border-sky-300 hover:shadow-md"
                   onClick={() => openEdit(r)}
                 >
-                  <p className="font-medium leading-snug text-white">{r.description}</p>
+                  <p className="font-medium leading-snug text-slate-900">{r.description}</p>
                   <p className="mt-1 text-muted-foreground">
                     {formatDateBr(r.competenceDate)} · venc. {formatDateBr(r.dueDate)}
                   </p>
                   <p className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-base font-semibold text-orange-200">{brl(parseFloat(r.amount))}</span>
+                    <span className="text-base font-semibold text-orange-700">{brl(parseFloat(r.amount))}</span>
                     <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{r.status}</span>
                   </p>
                 </button>
@@ -582,7 +582,7 @@ export default function Despesas() {
                     title="Pago"
                     onClick={() => void markAsPaid(r.id)}
                   >
-                    <CheckCircle2 className="h-5 w-5 text-orange-300" />
+                    <CheckCircle2 className="h-5 w-5 text-orange-600" />
                   </Button>
                 )}
               </li>

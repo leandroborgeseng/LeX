@@ -4,37 +4,36 @@
 
 @layer base {
   :root {
-    /* Base escura com fundo azul-profundo */
-    --background: 222 52% 6%;
-    --foreground: 210 40% 99%;
-    --card: 220 45% 10%;
-    --card-foreground: 210 40% 98%;
-    /* Ações principais — azul vivo */
-    --primary: 204 100% 48%;
-    --primary-foreground: 222 52% 6%;
-    /* Painéis secundários — verde-azulado escuro */
-    --secondary: 196 45% 16%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 218 32% 14%;
-    --muted-foreground: 215 22% 72%;
-    /* Destaques / hovers — laranja aeronáutico (alta visibilidade) */
-    --accent: 22 100% 54%;
-    --accent-foreground: 222 52% 7%;
-    --destructive: 350 78% 56%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 215 35% 18%;
-    --input: 215 35% 18%;
-    --ring: 22 100% 54%;
+    /* Tema claro — fundo branco, padrão do logotipo LeX (azul, verde, laranja) */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    /* Azul (faixa do «L» no logo) */
+    --primary: 204 100% 38%;
+    --primary-foreground: 0 0% 100%;
+    /* Superfícies secundárias suaves */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 40%;
+    /* Laranja aeronáutico — destaques */
+    --accent: 22 95% 48%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 350 78% 48%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 88%;
+    --input: 214 32% 88%;
+    --ring: 204 100% 38%;
 
-    /* Tokens de marca (HSL sem função — para Tailwind lex-* / <alpha-value>) */
-    --lex-blue: 204 100% 48%;
-    --lex-orange: 22 100% 54%;
-    --lex-green: 158 82% 42%;
+    /* Tokens de marca (vivos, legíveis em UI clara) */
+    --lex-blue: 204 100% 38%;
+    --lex-orange: 22 95% 48%;
+    --lex-green: 158 72% 32%;
 
-    /* Gráficos (hex para Recharts) */
-    --chart-blue: #0ea5e9;
-    --chart-green: #10b981;
-    --chart-orange: #ff7a1a;
+    --chart-blue: #0284c7;
+    --chart-green: #059669;
+    --chart-orange: #ea580c;
 
     --radius: 0.65rem;
   }
@@ -44,10 +43,9 @@
   body {
     @apply min-h-[100dvh] bg-background text-foreground antialiased;
     background-image:
-      radial-gradient(ellipse 130% 90% at 0% -5%, hsl(var(--lex-blue) / 0.18), transparent 52%),
-      radial-gradient(ellipse 100% 70% at 100% 0%, hsl(var(--lex-orange) / 0.14), transparent 48%),
-      radial-gradient(ellipse 80% 55% at 50% 105%, hsl(var(--lex-green) / 0.12), transparent 58%),
-      radial-gradient(ellipse 50% 40% at 85% 60%, hsl(var(--lex-blue) / 0.06), transparent 45%);
+      radial-gradient(ellipse 120% 80% at 0% 0%, hsl(var(--lex-blue) / 0.07), transparent 55%),
+      radial-gradient(ellipse 100% 70% at 100% 0%, hsl(var(--lex-orange) / 0.08), transparent 50%),
+      radial-gradient(ellipse 90% 60% at 50% 100%, hsl(var(--lex-green) / 0.06), transparent 55%);
   }
   button,
   a,

@@ -9,7 +9,7 @@ const tabs = [
 export default function MovimentosLayout() {
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-lex-blue/25 bg-gradient-to-br from-lex-blue/12 via-card to-lex-green/12 p-4 shadow-lg shadow-lex-orange/10 ring-1 ring-lex-orange/15">
+      <div className="rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-emerald-50 p-4 shadow-md shadow-orange-500/10 ring-1 ring-orange-100">
         <h1 className="text-2xl font-semibold tracking-tight">Movimentos</h1>
         <p className="text-sm text-muted-foreground">Registe entradas e saídas num só lugar — toque numa linha para editar.</p>
       </div>

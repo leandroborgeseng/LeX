@@ -8,13 +8,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['pwa-192.png', 'pwa-512.png', 'favicon.svg'],
+      includeAssets: ['lex-logo.png', 'favicon.svg'],
       manifest: {
         name: 'LeX Finance',
         short_name: 'LeX',
         description: 'Controle financeiro PF + PJ',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait-primary',
         scope: '/',
@@ -22,19 +22,19 @@ export default defineConfig({
         lang: 'pt-BR',
         icons: [
           {
-            src: '/pwa-192.png',
+            src: '/lex-logo.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/pwa-512.png',
+            src: '/lex-logo.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/pwa-512.png',
+            src: '/lex-logo.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',

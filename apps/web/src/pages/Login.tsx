@@ -51,13 +51,14 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md border-lex-blue/30 bg-card/90 shadow-xl shadow-lex-orange/10 ring-1 ring-lex-green/20 backdrop-blur-sm">
-        <CardHeader className="space-y-3 text-center">
-          <div className="flex justify-center">
-            <LexMark className="justify-center" />
+      <Card className="w-full max-w-md border-sky-200 bg-white shadow-xl shadow-sky-200/40 ring-1 ring-orange-100">
+        <CardHeader className="space-y-4 text-center">
+          <div className="flex justify-center px-2">
+            <LexMark className="justify-center [&_img]:h-14" />
           </div>
-          <p className="bg-gradient-to-r from-sky-300 via-orange-200 to-emerald-300 bg-clip-text text-sm font-medium text-transparent">
-            Controle financeiro unificado PF + PJ
+          <p className="text-sm font-medium text-slate-600">
+            Controle financeiro unificado <span className="text-sky-700">PF</span> +{' '}
+            <span className="text-emerald-700">PJ</span>
           </p>
         </CardHeader>
         <CardContent>
@@ -83,7 +84,7 @@ export default function Login() {
               />
             </div>
             {err && <p className="text-sm text-destructive">{err}</p>}
-            <Button type="submit" className="w-full font-semibold shadow-md shadow-lex-blue/25" disabled={loading}>
+            <Button type="submit" className="w-full font-semibold shadow-md shadow-sky-300/40" disabled={loading}>
               {loading ? 'Entrando…' : 'Entrar'}
             </Button>
           </form>

@@ -209,12 +209,17 @@ export default function Dashboard() {
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={cf}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(217 33% 20%)" />
-                <XAxis dataKey="label" tick={{ fill: 'hsl(215 20% 65%)', fontSize: 11 }} />
-                <YAxis tick={{ fill: 'hsl(215 20% 65%)', fontSize: 11 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 88%)" />
+                <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 11 }} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} />
                 <Tooltip
                   formatter={(v: number) => brl(v)}
-                  contentStyle={{ background: 'hsl(222 40% 10%)', border: '1px solid hsl(217 33% 20%)' }}
+                  contentStyle={{
+                  background: '#ffffff',
+                  border: '1px solid hsl(214 32% 88%)',
+                  color: '#0f172a',
+                  borderRadius: '8px',
+                }}
                 />
                 <Legend />
                 <Line type="monotone" dataKey="net" name="Saldo líquido mês" stroke="var(--chart-blue)" dot={false} />
@@ -232,9 +237,9 @@ export default function Dashboard() {
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={s.charts.expensesByCategory}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(217 33% 20%)" />
-                <XAxis dataKey="name" tick={{ fill: 'hsl(215 20% 65%)', fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={70} />
-                <YAxis tick={{ fill: 'hsl(215 20% 65%)', fontSize: 11 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 88%)" />
+                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={70} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} />
                 <Tooltip formatter={(v: number) => brl(v)} />
                 <Bar dataKey="value" fill="var(--chart-green)" name="Valor" />
               </BarChart>
@@ -248,9 +253,9 @@ export default function Dashboard() {
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={s.charts.revenuesByPayer}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(217 33% 20%)" />
-                <XAxis dataKey="name" tick={{ fill: 'hsl(215 20% 65%)', fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={70} />
-                <YAxis tick={{ fill: 'hsl(215 20% 65%)', fontSize: 11 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 88%)" />
+                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={70} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} />
                 <Tooltip formatter={(v: number) => brl(v)} />
                 <Bar dataKey="value" fill="var(--chart-blue)" name="Valor" />
               </BarChart>

@@ -123,9 +123,7 @@ export function AppShell() {
       <aside className="relative hidden w-60 shrink-0 border-r border-border bg-card/50 md:block">
         <div className="flex h-14 items-center gap-2 border-b border-border px-3 font-semibold tracking-tight">
           <LexMark />
-          <span className="truncate bg-gradient-to-r from-lex-blue to-lex-orange bg-clip-text text-sm font-medium text-transparent">
-            Finance
-          </span>
+          <span className="truncate text-sm font-semibold text-slate-600">Finance</span>
         </div>
         <nav className="max-h-[calc(100vh-7rem)] space-y-0.5 overflow-y-auto p-2">
           {nav.map((item) => (
@@ -153,8 +151,8 @@ export function AppShell() {
         <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
           <div className="flex flex-col gap-2 px-3 pb-2 pt-[env(safe-area-inset-top)]">
             <div className="flex h-12 items-center justify-between gap-2">
-              <div className="min-w-0">
-                <LexMark withWordmark={false} className="scale-95" />
+              <div className="min-w-0 pr-1">
+                <LexMark className="[&_img]:h-8" />
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <Button

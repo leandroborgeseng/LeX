@@ -168,12 +168,17 @@ export default function Relatorios() {
           <div className="h-64 w-full md:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(217 33% 20%)" />
-                <XAxis dataKey="label" tick={{ fill: 'hsl(215 20% 65%)', fontSize: 11 }} />
-                <YAxis tick={{ fill: 'hsl(215 20% 65%)', fontSize: 10 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 88%)" />
+                <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 11 }} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <Tooltip
                   formatter={(v: number) => brl(v)}
-                  contentStyle={{ background: 'hsl(222 40% 10%)', border: '1px solid hsl(217 33% 20%)' }}
+                  contentStyle={{
+                  background: '#ffffff',
+                  border: '1px solid hsl(214 32% 88%)',
+                  color: '#0f172a',
+                  borderRadius: '8px',
+                }}
                 />
                 <Legend />
                 <Bar dataKey="Receita" fill="var(--chart-green)" />
