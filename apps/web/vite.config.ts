@@ -9,12 +9,11 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: [
+        'lex-logo.png',
         'favicon.png',
         'apple-touch-icon.png',
         'logo.png',
         'icon.png',
-        'logo.svg',
-        'icon.svg',
       ],
       manifest: {
         name: 'LeX Finance',

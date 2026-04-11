@@ -36,7 +36,7 @@ if [ "${LEX_SKIP_AUTO_SEED:-0}" != "1" ]; then
   seed_check=$?
   set -e
   if [ "$seed_check" -eq 0 ]; then
-    echo "LeX: base sem utilizadores — a executar seed (utilizador leandro.borges@me.com; senha inicial no README)…"
+    echo "LeX: base sem utilizadores — a executar seed (defina LEX_SEED_PASSWORD; ver README)…"
     export LEX_ALLOW_SEED_IN_PROD=1
     npx prisma db seed --schema=prisma/schema.prisma
   elif [ "$seed_check" -ne 2 ]; then

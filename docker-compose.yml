@@ -12,8 +12,8 @@ services:
       NODE_ENV: production
       PORT: "3000"
       JWT_SECRET: ${LEX_JWT_SECRET:-change-me-docker-compose}
-      # Primeiro arranque com volume vazio: entrypoint corre seed (leandro.borges@me.com — ver README).
-      # Railway (Dockerfile): mesmo comportamento, sem precisar de variáveis extra.
+      # Obrigatório no primeiro arranque (base vazia): senha do utilizador seed.
+      LEX_SEED_PASSWORD: ${LEX_SEED_PASSWORD:-lex-docker-seed}
       # LEX_SKIP_AUTO_SEED=1 desativa o auto-seed.
     volumes:
       - lex_sqlite:/data

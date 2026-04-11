@@ -10,8 +10,19 @@ import * as bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 /** Utilizador inicial (bootstrap local / Docker / primeiro deploy). */
-const SEED_USER_EMAIL = 'leandro.borges@me.com';
-const SEED_USER_PASSWORD = 'Lean777$';
+const SEED_USER_EMAIL = process.env.LEX_SEED_EMAIL ?? 'leandro.borges@me.com';
+
+function resolveSeedPassword(): string {
+  const fromEnv = process.env.LEX_SEED_PASSWORD;
+  if (fromEnv && fromEnv.length > 0) return fromEnv;
+  if (process.env.NODE_ENV === 'production' && process.env.LEX_ALLOW_SEED_IN_PROD === '1') {
+    throw new Error(
+      'Defina LEX_SEED_PASSWORD no ambiente antes do seed em produção (primeiro arranque ou repor senha).',
+    );
+  }
+  // Desenvolvimento local: previsível; em produção sem LEX_ALLOW_SEED_IN_PROD o seed nem corre.
+  return 'lex-local-dev';
+}
 
 async function main() {
   if (process.env.NODE_ENV === 'production' && process.env.LEX_ALLOW_SEED_IN_PROD !== '1') {
@@ -24,7 +35,7 @@ async function main() {
     where: { email: 'admin@lex.local' },
   });
 
-  const passwordHash = await bcrypt.hash(SEED_USER_PASSWORD, 10);
+  const passwordHash = await bcrypt.hash(resolveSeedPassword(), 10);
   await prisma.user.upsert({
     where: { email: SEED_USER_EMAIL },
     update: { passwordHash },

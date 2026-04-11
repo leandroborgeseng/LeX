@@ -1,11 +1,11 @@
 import { cn } from '@/lib/utils';
 
-type Props = { className?: string; /** @deprecated Compatibilidade; o SVG já é só “LeX”. */ withWordmark?: boolean };
+type Props = { className?: string; /** @deprecated Compatibilidade. */ withWordmark?: boolean };
 
-const LOGO_SRC = '/logo.svg';
+const LOGO_SRC = '/lex-logo.png';
 
 /**
- * Marca LeX — texto “LeX” com cores da marca (`/public/logo.svg`, fundo transparente).
+ * Marca LeX — logótipo oficial (LeX + swoosh), ficheiro em `/public/lex-logo.png`.
  */
 export function LexMark({ className }: Props) {
   return (
@@ -15,7 +15,7 @@ export function LexMark({ className }: Props) {
         alt="LeX"
         className="h-10 w-auto max-w-[min(100%,240px)] object-contain object-left bg-transparent"
         width={200}
-        height={100}
+        height={56}
         decoding="async"
       />
     </div>
