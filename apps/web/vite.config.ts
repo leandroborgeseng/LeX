@@ -8,7 +8,14 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['lex-logo.png', 'favicon.svg'],
+      includeAssets: [
+        'favicon.png',
+        'apple-touch-icon.png',
+        'logo.png',
+        'icon.png',
+        'logo.svg',
+        'icon.svg',
+      ],
       manifest: {
         name: 'LeX Finance',
         short_name: 'LeX',
@@ -22,22 +29,16 @@ export default defineConfig({
         lang: 'pt-BR',
         icons: [
           {
-            src: '/lex-logo.png',
+            src: '/icon.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/lex-logo.png',
+            src: '/icon.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
-          },
-          {
-            src: '/lex-logo.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
           },
         ],
       },
