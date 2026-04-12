@@ -29,7 +29,12 @@ export default function Login() {
         const raw = e.response?.data?.message;
         const first = Array.isArray(raw) ? raw[0] : raw;
         if (status === 401) {
-          setErr('E-mail ou senha incorretos.');
+          const m = typeof first === 'string' ? first.trim() : '';
+          setErr(
+            m && m !== 'Credenciais inválidas' && m !== 'Unauthorized'
+              ? m
+              : 'E-mail ou senha incorretos.',
+          );
         } else if (status === 400) {
           setErr(
             typeof first === 'string'

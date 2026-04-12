@@ -183,6 +183,8 @@ Depois: **Actions → “Railway — LEX_SEED_PASSWORD” → Run workflow**. Co
 
 ### Login devolve “e-mail ou senha incorretos”
 
+**Diagnóstico rápido no Railway:** nas **Variables** do serviço, adicione temporariamente `LEX_VERBOSE_LOGIN_ERRORS` = `1` e faça **Redeploy**. No login, a API passa a responder com **“Não existe utilizador com este e-mail.”** ou **“Senha incorreta.”** em vez da mensagem genérica. Remova a variável depois de resolver.
+
 1. **E-mail exato** — o seed usa por defeito `leandro.borges@me.com` (com **g** em *borges*). Se tiver definido `LEX_SEED_EMAIL` no Railway, use esse valor.
 2. **Secret só no GitHub não altera a base** — é preciso **variável `LEX_SEED_PASSWORD` no Railway** *ou* correr o workflow **Actions → Railway — LEX_SEED_PASSWORD** com *run prisma seed* ligado, para atualizar o hash na SQLite. Senão a BD pode continuar com a senha do **primeiro** arranque (ex. `lex-docker-seed`).
 3. **Testar a API** — em `/api/docs`, experimente `POST /api/auth/login` com o mesmo corpo; se falhar, o problema é credenciais/servidor, não o browser.

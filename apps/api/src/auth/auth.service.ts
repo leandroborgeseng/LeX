@@ -3,6 +3,11 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 
+function loginVerboseErrors(): boolean {
+  const v = process.env.LEX_VERBOSE_LOGIN_ERRORS?.trim().toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes';
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -13,9 +18,19 @@ export class AuthService {
   async validateUser(email: string, password: string) {
     const normalized = email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({ where: { email: normalized } });
-    if (!user) throw new UnauthorizedException('Credenciais inválidas');
+    if (!user) {
+      throw new UnauthorizedException(
+        loginVerboseErrors()
+          ? 'Não existe utilizador com este e-mail.'
+          : 'Credenciais inválidas',
+      );
+    }
     const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) throw new UnauthorizedException('Credenciais inválidas');
+    if (!ok) {
+      throw new UnauthorizedException(
+        loginVerboseErrors() ? 'Senha incorreta.' : 'Credenciais inválidas',
+      );
+    }
     return user;
   }
 
