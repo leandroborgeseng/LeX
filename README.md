@@ -190,6 +190,25 @@ Depois: **Actions → “Railway — LEX_SEED_PASSWORD” → Run workflow**. Co
 3. **Testar a API** — em `/api/docs`, experimente `POST /api/auth/login` com o mesmo corpo; se falhar, o problema é credenciais/servidor, não o browser.
 4. **Caracteres especiais na senha** — se a variável foi colada com aspas erradas ou cortada antes do `$`, regrave `LEX_SEED_PASSWORD` no Railway (valor completo) e volte a correr o seed (workflow ou comando em Docker na documentação acima).
 
+### Reset de emergência da senha (sem seed / SSH)
+
+Se nada mais funcionar, pode usar um **endpoint único** que só existe quando define no Railway (ou Docker) a variável **`LEX_EMERGENCY_PASSWORD_RESET_TOKEN`** com um valor **longo e aleatório** (mínimo 16 caracteres no pedido; recomende-se 32+).
+
+1. No Railway → **Variables**: `LEX_EMERGENCY_PASSWORD_RESET_TOKEN` = por exemplo uma string gerada com o gestor de passwords.
+2. **Redeploy** (para carregar a variável).
+3. Envie um `POST` (ex.: a partir do computador):
+
+```bash
+curl -sS -X POST "https://SEU-DOMINIO-RAILWAY/api/auth/emergency-reset-password" \
+  -H "Content-Type: application/json" \
+  -d '{"token":"O_MESMO_VALOR_DA_VARIAVEL","email":"leandro.borges@me.com","newPassword":"NovaSenhaForte123"}'
+```
+
+4. Resposta `{"ok":true}` — faça login com a **newPassword**.
+5. **Apague imediatamente** `LEX_EMERGENCY_PASSWORD_RESET_TOKEN` no Railway e volte a fazer **Redeploy**. Com a variável vazia, o endpoint devolve 404.
+
+**Risco:** quem souber o token pode alterar a senha desse e-mail enquanto a variável existir. Use só em emergência e remova a variável logo a seguir.
+
 ## Scripts npm (raiz)
 
 | Script        | Descrição                                      |

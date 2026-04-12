@@ -5,11 +5,23 @@ import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser, type AuthUser } from '../common/decorators/current-user.decorator';
 import { ChangePasswordDto, UpdateProfileDto } from './dto/profile.dto';
+import { EmergencyPasswordResetDto } from './dto/emergency-reset.dto';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
+
+  @Post('emergency-reset-password')
+  @ApiOperation({
+    summary: 'Reset de emergência (requer LEX_EMERGENCY_PASSWORD_RESET_TOKEN)',
+    description:
+      'Só responde se o token de ambiente estiver definido. Remova a variável após repor a senha. Uso: self-host / Railway.',
+  })
+  @ApiBody({ type: EmergencyPasswordResetDto })
+  emergencyReset(@Body() dto: EmergencyPasswordResetDto) {
+    return this.auth.emergencyResetPassword(dto.token, dto.email, dto.newPassword);
+  }
 
   @Post('login')
   @ApiOperation({ summary: 'Login com e-mail e senha' })
