@@ -90,11 +90,9 @@ export default function Login() {
             </div>
             {err && <p className="text-sm text-destructive">{err}</p>}
             <p className="text-center text-xs leading-relaxed text-muted-foreground">
-              Seed: <span className="font-mono text-slate-600">leandro.borges@me.com</span> /{' '}
-              <span className="font-mono text-slate-600">Lean777$</span>. Se não entrar: no Railway defina{' '}
-              <span className="font-mono">LEX_RUN_SEED_ON_BOOT</span> como <span className="font-mono">true</span>{' '}
-              ou <span className="font-mono">1</span>, Redeploy (corre o seed), depois remova. Nos logs deve aparecer
-              “LEX_RUN_SEED_ON_BOOT ativo”.
+              Padrão: <span className="font-mono text-slate-600">leandro.borges@me.com</span> · senha{' '}
+              <span className="font-mono text-slate-600">Lean777$</span> · o seed roda a cada subida do container e
+              grava de novo essa senha na base.
             </p>
             <Button type="submit" className="w-full font-semibold shadow-md shadow-sky-300/40" disabled={loading}>
               {loading ? 'Entrando…' : 'Entrar'}

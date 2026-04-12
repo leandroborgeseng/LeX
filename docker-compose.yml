@@ -14,7 +14,7 @@ services:
       JWT_SECRET: ${LEX_JWT_SECRET:-change-me-docker-compose}
       # Padrão Lean777$; sobrescreva com LEX_SEED_PASSWORD no .env ($$ = $ no Compose).
       LEX_SEED_PASSWORD: ${LEX_SEED_PASSWORD:-Lean777$$}
-      # LEX_SKIP_AUTO_SEED=1 desativa o auto-seed.
+      # LEX_SKIP_AUTO_SEED=true desativa o seed no entrypoint.
     volumes:
       - lex_sqlite:/data
     healthcheck:

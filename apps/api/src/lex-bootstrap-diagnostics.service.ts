@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
 
-/** Alinhado com prisma/seed.ts — só para log de arranque (Railway / Docker). */
+/** Igual ao prisma/seed.ts — log ao subir (Railway / Docker). */
 function seedUserEmail(): string {
   return (process.env.LEX_SEED_EMAIL ?? 'leandro.borges@me.com').trim().toLowerCase();
 }
@@ -21,10 +21,10 @@ export class LexBootstrapDiagnosticsService implements OnModuleInit {
         select: { id: true },
       });
       this.logger.log(
-        `Arranque: ${total} utilizador(es); conta seed (${email}): ${seedRow ? 'presente' : 'ausente'}.`,
+        `Subiu: ${total} usuário(s); conta seed (${email}): ${seedRow ? 'ok' : 'falta'}.`,
       );
     } catch (e) {
-      this.logger.warn(`Arranque: falha ao consultar utilizadores — ${String(e)}`);
+      this.logger.warn(`Subiu: erro ao ler usuários — ${String(e)}`);
     }
   }
 }
