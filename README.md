@@ -161,9 +161,20 @@ O seed atual remove o utilizador legado `admin@lex.local` (se existir) e garante
 2. Adicione um **volume** montado em **`/data`** para persistir o SQLite. Sem volume (ou com caminho errado), o SQLite pode falhar com **Unable to open the database file** (erro 14). A imagem usa um entrypoint que verifica se `/data` é gravável antes de migrar e subir a API.
 3. Variáveis sugeridas:
    - `JWT_SECRET` — obrigatório em produção.
-   - **`LEX_SEED_PASSWORD`** — obrigatório no **primeiro arranque** (base vazia); define a senha do utilizador seed. Depois do login, pode alterar no ecrã de perfil.
+   - **`LEX_SEED_PASSWORD`** — obrigatório no **primeiro arranque** (base vazia); define a senha do utilizador seed. Depois do login, pode alterar no ecrã de perfil. **Não commite a senha no Git:** defina-a no painel do Railway (**Variables**) ou use o workflow em `.github/workflows/railway-lex-seed-password.yml` com **GitHub Secrets** (ver abaixo).
    - `DATABASE_URL=file:/data/app.db` (já é o padrão do `Dockerfile`; reforce se necessário).
    - `PORT` — definido automaticamente pelo Railway.
+
+**GitHub Actions (sem acesso ao painel Railway):** no repositório, em **Settings → Secrets and variables → Actions**, crie:
+
+| Secret | Conteúdo |
+|--------|----------|
+| `RAILWAY_TOKEN` | Token de projeto: Railway → Project → **Settings → Tokens** |
+| `RAILWAY_SERVICE_ID` | ID do serviço Docker (ou nome, conforme o CLI aceitar) — visível na URL ou em **Settings** do serviço |
+| `LEX_SEED_PASSWORD` | A senha desejada para o utilizador seed (ex.: a que usa no login) |
+| `RAILWAY_ENVIRONMENT` | (opcional) Nome do ambiente, ex. `production`; se omitir, usa-se `production` |
+
+Depois: **Actions → “Railway — LEX_SEED_PASSWORD” → Run workflow**. Com a opção *run prisma seed* ativa (padrão), o job grava a variável no Railway **sem disparar deploy imediato** (`--skip-deploys`) e corre `prisma db seed` via `railway ssh` para atualizar o hash na base já existente. Desative *run prisma seed* só se quiser apenas guardar a variável para o próximo deploy.
 4. O arquivo `railway.json` aponta para o `Dockerfile` na raiz.
 5. **Primeiro deploy:** com volume em `/data` vazio, o entrypoint aplica migrações e **cria o utilizador seed** (e-mail por defeito `leandro.borges@me.com`, ou `LEX_SEED_EMAIL`). Com base já populada, o seed automático **não** volta a correr; para **repor a senha**, execute o seed manualmente com `LEX_ALLOW_SEED_IN_PROD=1` e `LEX_SEED_PASSWORD=…` (ver secção Docker acima) ou use o ecrã de perfil se ainda tiver sessão.
 
