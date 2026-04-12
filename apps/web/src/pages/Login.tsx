@@ -91,8 +91,10 @@ export default function Login() {
             {err && <p className="text-sm text-destructive">{err}</p>}
             <p className="text-center text-xs leading-relaxed text-muted-foreground">
               Seed: <span className="font-mono text-slate-600">leandro.borges@me.com</span> /{' '}
-              <span className="font-mono text-slate-600">Lean777$</span> (padrão no repositório). Para repor a
-              senha na BD: <span className="font-mono">LEX_RUN_SEED_ON_BOOT=1</span> + Redeploy, depois remova.
+              <span className="font-mono text-slate-600">Lean777$</span>. Se não entrar: no Railway defina{' '}
+              <span className="font-mono">LEX_RUN_SEED_ON_BOOT</span> como <span className="font-mono">true</span>{' '}
+              ou <span className="font-mono">1</span>, Redeploy (corre o seed), depois remova. Nos logs deve aparecer
+              “LEX_RUN_SEED_ON_BOOT ativo”.
             </p>
             <Button type="submit" className="w-full font-semibold shadow-md shadow-sky-300/40" disabled={loading}>
               {loading ? 'Entrando…' : 'Entrar'}

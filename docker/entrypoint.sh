@@ -23,16 +23,23 @@ fi
 
 cd /app/apps/api
 
+# Railway / painéis enviam por vezes "true" em vez de "1" — normalizar.
+_lex_truthy() {
+  _v=$(printf '%s' "${1:-0}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]')
+  case "$_v" in 1|true|yes|on) return 0 ;; *) return 1 ;; esac
+}
+
 echo "LeX: DATABASE_URL=${DATABASE_URL}"
 echo "LeX: migrando…"
 npx prisma migrate deploy --schema=prisma/schema.prisma
 
-# Seed: (A) base vazia — automático; (B) LEX_RUN_SEED_ON_BOOT=1 — força seed (repõe hash da senha
-# do utilizador seed a partir de LEX_SEED_PASSWORD). Remova LEX_RUN_SEED_ON_BOOT após entrar.
-# LEX_ALLOW_SEED_IN_PROD só é exportado nestes ramos. Desative tudo com LEX_SKIP_AUTO_SEED=1.
-if [ "${LEX_SKIP_AUTO_SEED:-0}" != "1" ]; then
-  if [ "${LEX_RUN_SEED_ON_BOOT:-0}" = "1" ]; then
-    echo "LeX: LEX_RUN_SEED_ON_BOOT=1 — a executar prisma db seed (sincroniza utilizador/senha do seed)." >&2
+# Seed: (A) base vazia — automático; (B) LEX_RUN_SEED_ON_BOOT truthy — força seed (repõe hash).
+# Remova LEX_RUN_SEED_ON_BOOT após entrar. LEX_ALLOW_SEED_IN_PROD só nestes ramos.
+# LEX_SKIP_AUTO_SEED truthy desativa qualquer seed.
+if _lex_truthy "${LEX_SKIP_AUTO_SEED:-0}"; then
+  echo "LeX: LEX_SKIP_AUTO_SEED ativo — seed ignorado."
+elif _lex_truthy "${LEX_RUN_SEED_ON_BOOT:-0}"; then
+    echo "LeX: LEX_RUN_SEED_ON_BOOT ativo — a executar prisma db seed (sincroniza utilizador/senha)." >&2
     echo "LeX: Remova LEX_RUN_SEED_ON_BOOT no painel após confirmar o login." >&2
     export LEX_ALLOW_SEED_IN_PROD=1
     npx prisma db seed --schema=prisma/schema.prisma
@@ -48,7 +55,6 @@ if [ "${LEX_SKIP_AUTO_SEED:-0}" != "1" ]; then
     elif [ "$seed_check" -ne 2 ]; then
       echo "LeX: aviso — não foi possível verificar utilizadores (código $seed_check)." >&2
     fi
-  fi
 fi
 
 chmod -R a+rwX "$DATA_DIR" 2>/dev/null || true

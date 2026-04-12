@@ -10,6 +10,7 @@ export class LoginDto {
   email!: string;
 
   @ApiProperty({ example: '********' })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @MinLength(4)
   password!: string;
