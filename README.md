@@ -176,7 +176,7 @@ O seed atual remove o utilizador legado `admin@lex.local` (se existir) e garante
 
 Depois: **Actions → “Railway — LEX_SEED_PASSWORD” → Run workflow**. Com a opção *run prisma seed* ativa (padrão), o job grava a variável no Railway **sem disparar deploy imediato** (`--skip-deploys`) e corre `prisma db seed` via `railway ssh` para atualizar o hash na base já existente. Desative *run prisma seed* só se quiser apenas guardar a variável para o próximo deploy.
 4. O arquivo `railway.json` aponta para o `Dockerfile` na raiz.
-5. **Primeiro deploy:** com volume em `/data` vazio, o entrypoint aplica migrações e **cria o utilizador seed** (e-mail por defeito `leandro.borges@me.com`, ou `LEX_SEED_EMAIL`). Com base já populada, o seed automático **não** volta a correr; para **repor a senha**, execute o seed manualmente com `LEX_ALLOW_SEED_IN_PROD=1` e `LEX_SEED_PASSWORD=…` (ver secção Docker acima) ou use o ecrã de perfil se ainda tiver sessão.
+5. **Primeiro deploy:** com volume em `/data` vazio, o entrypoint aplica migrações e **cria o utilizador seed** (e-mail por defeito `leandro.borges@me.com`, ou `LEX_SEED_EMAIL`). Com base **já** populada, mudar só `LEX_SEED_PASSWORD` no painel **não** altera o hash na SQLite. Para **sincronizar a senha** sem SSH: defina **`LEX_RUN_SEED_ON_BOOT=1`**, confirme `LEX_SEED_PASSWORD` (e opcionalmente `LEX_SEED_EMAIL`), faça **Redeploy**, faça login e **apague** `LEX_RUN_SEED_ON_BOOT`. Alternativa: workflow GitHub ou `docker exec` com seed (secção Docker).
 
 6. Em **Settings → Networking**, gere um **domínio público** (ou use o que o Railway atribui). Serviço só com rede interna ou URL errada costuma aparecer como *Application failed to respond*. Health check: `GET /health` → `ok`.
 7. Acesse a URL pública: interface web na raiz, API em `/api`, documentação em `/api/docs`.
@@ -186,7 +186,7 @@ Depois: **Actions → “Railway — LEX_SEED_PASSWORD” → Run workflow**. Co
 **Diagnóstico rápido no Railway:** nas **Variables** do serviço, adicione temporariamente `LEX_VERBOSE_LOGIN_ERRORS` = `1` e faça **Redeploy**. No login, a API passa a responder com **“Não existe utilizador com este e-mail.”** ou **“Senha incorreta.”** em vez da mensagem genérica. Remova a variável depois de resolver.
 
 1. **E-mail exato** — o seed usa por defeito `leandro.borges@me.com` (com **g** em *borges*). Se tiver definido `LEX_SEED_EMAIL` no Railway, use esse valor.
-2. **Secret só no GitHub não altera a base** — é preciso **variável `LEX_SEED_PASSWORD` no Railway** *ou* correr o workflow **Actions → Railway — LEX_SEED_PASSWORD** com *run prisma seed* ligado, para atualizar o hash na SQLite. Senão a BD pode continuar com a senha do **primeiro** arranque (ex. `lex-docker-seed`).
+2. **Variáveis no Railway sem novo seed** — `LEX_SEED_PASSWORD` só entra na base quando o **prisma db seed** corre. Se a base já existia, use **`LEX_RUN_SEED_ON_BOOT=1`** → Redeploy → login → remova a variável. Ou o workflow **Actions → Railway — LEX_SEED_PASSWORD** com *run prisma seed*.
 3. **Testar a API** — em `/api/docs`, experimente `POST /api/auth/login` com o mesmo corpo; se falhar, o problema é credenciais/servidor, não o browser.
 4. **Caracteres especiais na senha** — se a variável foi colada com aspas erradas ou cortada antes do `$`, regrave `LEX_SEED_PASSWORD` no Railway (valor completo) e volte a correr o seed (workflow ou comando em Docker na documentação acima).
 

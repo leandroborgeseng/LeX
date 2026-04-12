@@ -90,12 +90,11 @@ export default function Login() {
             </div>
             {err && <p className="text-sm text-destructive">{err}</p>}
             <p className="text-center text-xs leading-relaxed text-muted-foreground">
-              Conta criada pelo seed (Docker/Railway): e-mail por defeito{' '}
-              <span className="font-mono text-slate-600">leandro.borges@me.com</span>
-              {' — '}
-              confira também <span className="font-mono">LEX_SEED_EMAIL</span> no servidor. A senha é a de{' '}
-              <span className="font-mono">LEX_SEED_PASSWORD</span> (no Railway ou após correr o workflow do GitHub),
-              não o secret sozinho no GitHub.
+              Docker/Railway: e-mail por defeito{' '}
+              <span className="font-mono text-slate-600">leandro.borges@me.com</span> (ou{' '}
+              <span className="font-mono">LEX_SEED_EMAIL</span>). Só alterar{' '}
+              <span className="font-mono">LEX_SEED_PASSWORD</span> no painel não atualiza a base já criada — defina{' '}
+              <span className="font-mono">LEX_RUN_SEED_ON_BOOT=1</span>, Redeploy, entre e remova essa variável.
             </p>
             <Button type="submit" className="w-full font-semibold shadow-md shadow-sky-300/40" disabled={loading}>
               {loading ? 'Entrando…' : 'Entrar'}

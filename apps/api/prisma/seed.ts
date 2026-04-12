@@ -10,10 +10,10 @@ import * as bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 /** Utilizador inicial (bootstrap local / Docker / primeiro deploy). */
-const SEED_USER_EMAIL = process.env.LEX_SEED_EMAIL ?? 'leandro.borges@me.com';
+const SEED_USER_EMAIL = (process.env.LEX_SEED_EMAIL ?? 'leandro.borges@me.com').trim().toLowerCase();
 
 function resolveSeedPassword(): string {
-  const fromEnv = process.env.LEX_SEED_PASSWORD;
+  const fromEnv = process.env.LEX_SEED_PASSWORD?.trim();
   if (fromEnv && fromEnv.length > 0) return fromEnv;
   if (process.env.NODE_ENV === 'production' && process.env.LEX_ALLOW_SEED_IN_PROD === '1') {
     throw new Error(
