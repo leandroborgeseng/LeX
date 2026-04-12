@@ -1,5 +1,5 @@
 import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -8,10 +8,7 @@ const THEME_COLOR = '#036496';
 
 const shortcutIcon = [{ src: '/icon.png', sizes: '192x192', type: 'image/png' as const }];
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-
-  return {
+export default defineConfig(({ mode }) => ({
     plugins: [
       react(),
       VitePWA({
@@ -102,8 +99,9 @@ export default defineConfig(({ mode }) => {
           navigateFallback: 'index.html',
           navigateFallbackDenylist: [/^\/api/, /^\/health$/],
         },
+        // Em dev o SW vem ligado por defeito (PWA como padrão). Em produção o build sempre gera manifest + SW.
         devOptions: {
-          enabled: env.VITE_PWA_DEV === 'true',
+          enabled: mode === 'development',
           type: 'module',
         },
       }),
@@ -121,5 +119,4 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       emptyOutDir: true,
     },
-  };
-});
+}));
