@@ -1,28 +1,12 @@
 import type { ReactNode } from 'react';
+import { Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageLoading } from '@/components/layout/PageLoading';
+import { PwaUpdatePrompt } from '@/components/layout/PwaUpdatePrompt';
 import Login from '@/pages/Login';
-import Dashboard from '@/pages/Dashboard';
-import Entidades from '@/pages/Entidades';
-import Contas from '@/pages/Contas';
-import Cartoes from '@/pages/Cartoes';
-import Membros from '@/pages/Membros';
-import Categorias from '@/pages/Categorias';
-import Fontes from '@/pages/Fontes';
-import Receitas from '@/pages/Receitas';
-import Despesas from '@/pages/Despesas';
-import MovimentosLayout from '@/pages/MovimentosLayout';
+import * as Pages from '@/pages/lazy-pages';
 import { RedirectToMovimentosDespesas, RedirectToMovimentosReceitas } from '@/routes/redirects';
-import Contratos from '@/pages/Contratos';
-import Funcionarios from '@/pages/Funcionarios';
-import Financiamentos from '@/pages/Financiamentos';
-import Transferencias from '@/pages/Transferencias';
-import CartaoLancamentos from '@/pages/CartaoLancamentos';
-import Relatorios from '@/pages/Relatorios';
-import Projecoes from '@/pages/Projecoes';
-import Cdb from '@/pages/Cdb';
-import Estrutura from '@/pages/Estrutura';
-import Perfil from '@/pages/Perfil';
 import { PreferencesProvider } from '@/lib/preferences';
 
 function Protected({ children }: { children: ReactNode }) {
@@ -34,45 +18,48 @@ function Protected({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          element={
-            <Protected>
-              <PreferencesProvider>
-                <AppShell />
-              </PreferencesProvider>
-            </Protected>
-          }
-        >
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/estrutura" element={<Estrutura />} />
-          <Route path="/entidades" element={<Entidades />} />
-          <Route path="/contas" element={<Contas />} />
-          <Route path="/cartoes" element={<Cartoes />} />
-          <Route path="/cartoes/:cardId" element={<CartaoLancamentos />} />
-          <Route path="/membros" element={<Membros />} />
-          <Route path="/categorias" element={<Categorias />} />
-          <Route path="/fontes" element={<Fontes />} />
-          <Route path="/movimentos" element={<MovimentosLayout />}>
-            <Route index element={<Navigate to="receitas" replace />} />
-            <Route path="receitas" element={<Receitas />} />
-            <Route path="despesas" element={<Despesas />} />
+      <PwaUpdatePrompt />
+      <Suspense fallback={<PageLoading />}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            element={
+              <Protected>
+                <PreferencesProvider>
+                  <AppShell />
+                </PreferencesProvider>
+              </Protected>
+            }
+          >
+            <Route path="/" element={<Pages.Dashboard />} />
+            <Route path="/estrutura" element={<Pages.Estrutura />} />
+            <Route path="/entidades" element={<Pages.Entidades />} />
+            <Route path="/contas" element={<Pages.Contas />} />
+            <Route path="/cartoes" element={<Pages.Cartoes />} />
+            <Route path="/cartoes/:cardId" element={<Pages.CartaoLancamentos />} />
+            <Route path="/membros" element={<Pages.Membros />} />
+            <Route path="/categorias" element={<Pages.Categorias />} />
+            <Route path="/fontes" element={<Pages.Fontes />} />
+            <Route path="/movimentos" element={<Pages.MovimentosLayout />}>
+              <Route index element={<Navigate to="receitas" replace />} />
+              <Route path="receitas" element={<Pages.Receitas />} />
+              <Route path="despesas" element={<Pages.Despesas />} />
+            </Route>
+            <Route path="/receitas" element={<RedirectToMovimentosReceitas />} />
+            <Route path="/despesas" element={<RedirectToMovimentosDespesas />} />
+            <Route path="/contratos" element={<Pages.Contratos />} />
+            <Route path="/funcionarios" element={<Pages.Funcionarios />} />
+            <Route path="/financiamentos" element={<Pages.Financiamentos />} />
+            <Route path="/transferencias" element={<Pages.Transferencias />} />
+            <Route path="/cartao-lancamentos" element={<Navigate to="/cartoes" replace />} />
+            <Route path="/relatorios" element={<Pages.Relatorios />} />
+            <Route path="/cdb" element={<Pages.Cdb />} />
+            <Route path="/projecoes" element={<Pages.Projecoes />} />
+            <Route path="/perfil" element={<Pages.Perfil />} />
           </Route>
-          <Route path="/receitas" element={<RedirectToMovimentosReceitas />} />
-          <Route path="/despesas" element={<RedirectToMovimentosDespesas />} />
-          <Route path="/contratos" element={<Contratos />} />
-          <Route path="/funcionarios" element={<Funcionarios />} />
-          <Route path="/financiamentos" element={<Financiamentos />} />
-          <Route path="/transferencias" element={<Transferencias />} />
-          <Route path="/cartao-lancamentos" element={<Navigate to="/cartoes" replace />} />
-          <Route path="/relatorios" element={<Relatorios />} />
-          <Route path="/cdb" element={<Cdb />} />
-          <Route path="/projecoes" element={<Projecoes />} />
-          <Route path="/perfil" element={<Perfil />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

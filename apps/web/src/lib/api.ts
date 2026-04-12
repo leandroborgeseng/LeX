@@ -59,8 +59,18 @@ api.interceptors.response.use(
   },
 );
 
-window.addEventListener('online', () => {
-  void flushOutbox(api);
+function flushWhenOnline() {
+  if (typeof navigator !== 'undefined' && navigator.onLine) {
+    void flushOutbox(api);
+  }
+}
+
+window.addEventListener('online', flushWhenOnline);
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    flushWhenOnline();
+  }
 });
 
 export function syncOutboxNow(): Promise<void> {

@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 
 const DB_NAME = 'lex-offline';
 const STORE = 'outbox';
@@ -74,7 +74,10 @@ export async function flushOutbox(api: AxiosInstance): Promise<void> {
         lexSkipOutbox: true,
       } as LexAxiosConfig);
       await d.delete(STORE, row.id);
-    } catch {
+    } catch (e) {
+      if (axios.isAxiosError(e) && e.response?.status === 401) {
+        emitOutboxChanged();
+      }
       break;
     }
   }
