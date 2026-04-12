@@ -84,6 +84,14 @@ export default function Login() {
               />
             </div>
             {err && <p className="text-sm text-destructive">{err}</p>}
+            <p className="text-center text-xs leading-relaxed text-muted-foreground">
+              Conta criada pelo seed (Docker/Railway): e-mail por defeito{' '}
+              <span className="font-mono text-slate-600">leandro.borges@me.com</span>
+              {' — '}
+              confira também <span className="font-mono">LEX_SEED_EMAIL</span> no servidor. A senha é a de{' '}
+              <span className="font-mono">LEX_SEED_PASSWORD</span> (no Railway ou após correr o workflow do GitHub),
+              não o secret sozinho no GitHub.
+            </p>
             <Button type="submit" className="w-full font-semibold shadow-md shadow-sky-300/40" disabled={loading}>
               {loading ? 'Entrando…' : 'Entrar'}
             </Button>

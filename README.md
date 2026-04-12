@@ -181,6 +181,13 @@ Depois: **Actions → “Railway — LEX_SEED_PASSWORD” → Run workflow**. Co
 6. Em **Settings → Networking**, gere um **domínio público** (ou use o que o Railway atribui). Serviço só com rede interna ou URL errada costuma aparecer como *Application failed to respond*. Health check: `GET /health` → `ok`.
 7. Acesse a URL pública: interface web na raiz, API em `/api`, documentação em `/api/docs`.
 
+### Login devolve “e-mail ou senha incorretos”
+
+1. **E-mail exato** — o seed usa por defeito `leandro.borges@me.com` (com **g** em *borges*). Se tiver definido `LEX_SEED_EMAIL` no Railway, use esse valor.
+2. **Secret só no GitHub não altera a base** — é preciso **variável `LEX_SEED_PASSWORD` no Railway** *ou* correr o workflow **Actions → Railway — LEX_SEED_PASSWORD** com *run prisma seed* ligado, para atualizar o hash na SQLite. Senão a BD pode continuar com a senha do **primeiro** arranque (ex. `lex-docker-seed`).
+3. **Testar a API** — em `/api/docs`, experimente `POST /api/auth/login` com o mesmo corpo; se falhar, o problema é credenciais/servidor, não o browser.
+4. **Caracteres especiais na senha** — se a variável foi colada com aspas erradas ou cortada antes do `$`, regrave `LEX_SEED_PASSWORD` no Railway (valor completo) e volte a correr o seed (workflow ou comando em Docker na documentação acima).
+
 ## Scripts npm (raiz)
 
 | Script        | Descrição                                      |
