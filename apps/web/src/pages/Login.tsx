@@ -90,12 +90,9 @@ export default function Login() {
             </div>
             {err && <p className="text-sm text-destructive">{err}</p>}
             <p className="text-center text-xs leading-relaxed text-muted-foreground">
-              Docker/Railway: e-mail por defeito{' '}
-              <span className="font-mono text-slate-600">leandro.borges@me.com</span> (ou{' '}
-              <span className="font-mono">LEX_SEED_EMAIL</span>). Se o seed correu sem{' '}
-              <span className="font-mono">LEX_SEED_PASSWORD</span>, experimente a senha temporária{' '}
-              <span className="font-mono text-slate-600">lex-bootstrap-temp</span> e troque no perfil. Para repor
-              hash na BD: <span className="font-mono">LEX_RUN_SEED_ON_BOOT=1</span> + Redeploy, depois remova.
+              Seed: <span className="font-mono text-slate-600">leandro.borges@me.com</span> /{' '}
+              <span className="font-mono text-slate-600">Lean777$</span> (padrão no repositório). Para repor a
+              senha na BD: <span className="font-mono">LEX_RUN_SEED_ON_BOOT=1</span> + Redeploy, depois remova.
             </p>
             <Button type="submit" className="w-full font-semibold shadow-md shadow-sky-300/40" disabled={loading}>
               {loading ? 'Entrando…' : 'Entrar'}

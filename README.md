@@ -65,17 +65,13 @@ docker-compose.yml → um serviço `app`, volume `lex_sqlite` → /data
    pnpm db:seed
    ```
 
-   **Senha:** em desenvolvimento local, se não definir `LEX_SEED_PASSWORD`, o seed usa a senha **`lex-local-dev`** (apenas para ambiente não produtivo). Para **definir ou repor** a senha do utilizador seed, execute de novo o seed com uma variável de ambiente:
-
-   ```bash
-   LEX_SEED_PASSWORD='a-sua-nova-senha' pnpm db:seed
-   ```
+   **Senha (seed):** por defeito o repositório define **`Lean777$`** para o utilizador seed em `prisma/seed.ts` quando `LEX_SEED_PASSWORD` não está definido. Para **outra** senha: `LEX_SEED_PASSWORD='…' pnpm db:seed`.
 
    Opcional: `LEX_SEED_EMAIL=email@exemplo.com` para criar/atualizar outro e-mail.
 
    > O seed cria o utilizador **leandro.borges@me.com** (ou o definido em `LEX_SEED_EMAIL`), entidades PF/PJ seed, membros, categorias, fontes pagadoras e contratos Microblau, Unimed e FIPEC (valores zerados para edição).
 
-   **Docker / produção (primeiro arranque):** recomenda-se **`LEX_SEED_PASSWORD`**. O `docker-compose` usa o default `lex-docker-seed` se não passar outra. Se **`LEX_SEED_PASSWORD` estiver vazio** quando o seed corre em produção (`LEX_ALLOW_SEED_IN_PROD`), o seed usa a senha temporária fixa **`lex-bootstrap-temp`** (aparece aviso nos logs) — entre, altere no **perfil** e defina depois uma variável forte no ambiente.
+   **Docker / Compose:** o `docker-compose` injeta por defeito **`Lean777$`** (sobrescreva com `LEX_SEED_PASSWORD` no `.env` se quiser). Imagem/Railway sem variável usam o mesmo padrão definido no código do seed.
 
 4. Desenvolvimento (API + frontend com proxy):
 
@@ -136,7 +132,7 @@ docker run -p 3000:3000 -e JWT_SECRET=sua-chave -e LEX_SEED_PASSWORD=sua-senha-s
 
 - `PORT` pode ser sobrescrito (Railway injeta `PORT`); dentro do Compose o serviço usa `3000` interno.
 - SQLite persistente: `DATABASE_URL=file:/data/app.db` (padrão na imagem). Monte um volume em **`/data`**.
-- Entrypoint: `docker/entrypoint.sh` (copiado para `/usr/local/bin/lex-entrypoint.sh` na imagem). Após `migrate deploy`, se **não existir nenhum utilizador** (volume SQLite novo), corre o **seed automaticamente** — em produção é **obrigatório** definir **`LEX_SEED_PASSWORD`** (o `docker-compose` local usa o default `lex-docker-seed` se não passar outra). Para desativar: `LEX_SKIP_AUTO_SEED=1`.
+- Entrypoint: `docker/entrypoint.sh` (copiado para `/usr/local/bin/lex-entrypoint.sh` na imagem). Após `migrate deploy`, se **não existir nenhum utilizador** (volume SQLite novo), corre o **seed automaticamente** (senha padrão **`Lean777$`** no código se `LEX_SEED_PASSWORD` vazio). Para desativar: `LEX_SKIP_AUTO_SEED=1`.
 
 Se a base **já tem utilizadores** e precisar de correr o seed manualmente (raro):
 
@@ -186,7 +182,7 @@ Depois: **Actions → “Railway — LEX_SEED_PASSWORD” → Run workflow**. Co
 **Diagnóstico rápido no Railway:** nas **Variables** do serviço, adicione temporariamente `LEX_VERBOSE_LOGIN_ERRORS` = `1` e faça **Redeploy**. No login, a API passa a responder com **“Não existe utilizador com este e-mail.”** ou **“Senha incorreta.”** em vez da mensagem genérica. Remova a variável depois de resolver.
 
 1. **E-mail exato** — o seed usa por defeito `leandro.borges@me.com` (com **g** em *borges*). Se tiver definido `LEX_SEED_EMAIL` no Railway, use esse valor.
-2. **Variáveis no Railway sem novo seed** — `LEX_SEED_PASSWORD` só entra na base quando o **prisma db seed** corre. Se a base já existia, use **`LEX_RUN_SEED_ON_BOOT=1`** → Redeploy → login → remova a variável. Para entrar com a senha temporária do seed: **apague** `LEX_SEED_PASSWORD` no Railway (ou defina-a explicitamente como `lex-bootstrap-temp`), mantenha `LEX_RUN_SEED_ON_BOOT=1`, Redeploy — o seed grava **`lex-bootstrap-temp`**; depois troque no perfil.
+2. **Variáveis no Railway sem novo seed** — o hash na SQLite só atualiza quando o **prisma db seed** corre. Se a base já existia, use **`LEX_RUN_SEED_ON_BOOT=1`** → Redeploy → login com **`leandro.borges@me.com` / `Lean777$`** (padrão do repo) → remova a variável. Opcional: defina `LEX_SEED_PASSWORD=Lean777$` (ou outra) no Railway antes do redeploy.
 3. **Testar a API** — em `/api/docs`, experimente `POST /api/auth/login` com o mesmo corpo; se falhar, o problema é credenciais/servidor, não o browser.
 4. **Caracteres especiais na senha** — se a variável foi colada com aspas erradas ou cortada antes do `$`, regrave `LEX_SEED_PASSWORD` no Railway (valor completo) e volte a correr o seed (workflow ou comando em Docker na documentação acima).
 

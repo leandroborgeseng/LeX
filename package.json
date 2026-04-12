@@ -8,7 +8,7 @@
     "start": "pnpm --filter @lex/api start:prod",
     "docker:build": "docker build -t lex-finance .",
     "docker:up": "docker compose up --build",
-    "docker:run": "docker run --rm -p 3000:3000 -e JWT_SECRET=dev-docker -e LEX_SEED_PASSWORD=lex-docker-seed -v lex_sqlite:/data lex-finance",
+    "docker:run": "docker run --rm -p 3000:3000 -e JWT_SECRET=dev-docker -v lex_sqlite:/data lex-finance",
     "db:generate": "pnpm --filter @lex/api prisma generate",
     "db:push": "pnpm --filter @lex/api prisma db push",
     "db:migrate": "pnpm --filter @lex/api prisma migrate deploy",
