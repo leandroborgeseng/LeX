@@ -4,36 +4,36 @@
 
 @layer base {
   :root {
-    /* Tema claro — fundo branco, padrão do logotipo LeX (azul, verde, laranja) */
+    /* Tema claro alinhado ao logotipo LeX (azul + verde + laranja) — contraste priorizado */
     --background: 0 0% 100%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
-    /* Azul (faixa do «L» no logo) */
-    --primary: 204 100% 38%;
+    /* Azul marca (faixa do L) */
+    --primary: 201 96% 32%;
     --primary-foreground: 0 0% 100%;
-    /* Superfícies secundárias suaves */
-    --secondary: 210 40% 96%;
+    --secondary: 210 36% 96%;
     --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 40%;
-    /* Laranja aeronáutico — destaques */
-    --accent: 22 95% 48%;
+    --muted: 210 32% 94%;
+    /* Texto secundário mais escuro para leitura (WCAG em fundos claros) */
+    --muted-foreground: 222 18% 34%;
+    /* Laranja marca — CTAs / despesas */
+    --accent: 24 95% 42%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 350 78% 48%;
+    --destructive: 350 78% 42%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 88%;
-    --input: 214 32% 88%;
-    --ring: 204 100% 38%;
+    --border: 214 24% 82%;
+    --input: 214 24% 82%;
+    --ring: 201 96% 32%;
 
-    /* Tokens de marca (vivos, legíveis em UI clara) */
-    --lex-blue: 204 100% 38%;
-    --lex-orange: 22 95% 48%;
-    --lex-green: 158 72% 32%;
+    /* HSL da marca (use text-lex-* / bg-lex-*); verde mais escuro para texto em fundo claro */
+    --lex-blue: 201 96% 32%;
+    --lex-orange: 24 95% 42%;
+    --lex-green: 158 70% 26%;
 
-    --chart-blue: #0284c7;
-    --chart-green: #059669;
-    --chart-orange: #ea580c;
+    --chart-blue: #0369a1;
+    --chart-green: #047857;
+    --chart-orange: #c2410c;
 
     --radius: 0.65rem;
   }

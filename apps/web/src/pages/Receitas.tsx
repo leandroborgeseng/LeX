@@ -192,9 +192,9 @@ export default function Receitas() {
       />
 
       {listFilter === 'proximos' && (
-        <div className="flex flex-col gap-2 rounded-xl border border-emerald-200 bg-emerald-50/90 px-3 py-3 text-sm text-slate-800 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 rounded-xl border border-lex-green/30 bg-lex-green/10 px-3 py-3 text-sm text-foreground sm:flex-row sm:items-center sm:justify-between">
           <span>
-            A mostrar apenas receitas <strong>previstas ou atrasadas</strong> com vencimento nos próximos{' '}
+            Mostrando apenas receitas <strong>previstas ou atrasadas</strong> com vencimento nos próximos{' '}
             <strong>30 dias</strong>.
           </span>
           <Button type="button" variant="outline" size="sm" className="shrink-0 touch-manipulation" onClick={() => setSearchParams({})}>
@@ -209,9 +209,9 @@ export default function Receitas() {
         <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{listActionMsg}</p>
       )}
 
-      <Card className="border-emerald-200/80 shadow-sm shadow-emerald-500/10">
-        <CardHeader className="rounded-t-xl border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-sky-50 to-amber-50/60">
-          <CardTitle className="text-base text-slate-800">Filtros da lista</CardTitle>
+      <Card className="border border-primary/20 shadow-sm">
+        <CardHeader className="rounded-t-xl border-b border-border bg-gradient-to-r from-lex-green/[0.1] via-card to-lex-blue/[0.06]">
+          <CardTitle className="text-base text-foreground">Filtros da lista</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 pt-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2 sm:col-span-2 lg:col-span-1">
@@ -301,9 +301,9 @@ export default function Receitas() {
         </CardContent>
       </Card>
 
-      <Card className="border-emerald-200/80 shadow-md shadow-emerald-500/10">
-        <CardHeader className="rounded-t-xl border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-sky-50">
-          <CardTitle className="text-base text-slate-800">Nova receita</CardTitle>
+      <Card className="border border-primary/20 shadow-sm">
+        <CardHeader className="rounded-t-xl border-b border-border bg-gradient-to-r from-lex-green/[0.1] via-card to-lex-blue/[0.08]">
+          <CardTitle className="text-base text-foreground">Nova receita</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
           <form onSubmit={create} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -432,9 +432,9 @@ export default function Receitas() {
         </CardContent>
       </Card>
 
-      <Card className="border-sky-200/80 shadow-md shadow-sky-500/10">
-        <CardHeader className="rounded-t-xl border-b border-sky-100 bg-gradient-to-r from-sky-50 via-white to-emerald-50/70">
-          <CardTitle className="text-base text-slate-800">
+      <Card className="border border-primary/20 shadow-sm">
+        <CardHeader className="rounded-t-xl border-b border-border bg-gradient-to-r from-lex-blue/[0.08] via-card to-lex-green/[0.1]">
+          <CardTitle className="text-base text-foreground">
             {listFilter === 'proximos' ? 'Receitas a vencer (filtro)' : 'Receitas'}
             <span className="ml-2 text-xs font-normal text-muted-foreground">
               — clique para editar; ✓ marca como recebido sem abrir o editor
@@ -500,10 +500,10 @@ export default function Receitas() {
               <li key={r.id} className="flex gap-2">
                 <button
                   type="button"
-                  className="min-w-0 flex-1 rounded-xl border border-emerald-200 bg-gradient-to-br from-white to-emerald-50/50 px-3 py-3 text-left text-sm shadow-sm transition hover:border-orange-300 hover:shadow-md"
+                  className="min-w-0 flex-1 rounded-xl border border-lex-green/25 bg-gradient-to-br from-card to-lex-green/[0.06] px-3 py-3 text-left text-sm shadow-sm transition hover:border-primary/35 hover:shadow-md"
                   onClick={() => openEdit(r)}
                 >
-                  <p className="font-medium leading-snug text-slate-900">{r.description}</p>
+                  <p className="font-medium leading-snug text-foreground">{r.description}</p>
                   <p className="mt-1 text-muted-foreground">
                     {formatDateBr(r.competenceDate)} · venc. {formatDateBr(r.dueDate)}
                   </p>

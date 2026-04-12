@@ -9,12 +9,14 @@ const tabs = [
 export default function MovimentosLayout() {
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-emerald-50 p-4 shadow-md shadow-orange-500/10 ring-1 ring-orange-100">
-        <h1 className="text-2xl font-semibold tracking-tight">Movimentos</h1>
-        <p className="text-sm text-muted-foreground">Registe entradas e saídas num só lugar — toque numa linha para editar.</p>
+      <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-lex-blue/[0.06] via-card to-lex-green/[0.08] p-4 shadow-sm">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Movimentos</h1>
+        <p className="text-sm text-muted-foreground">
+          Registre entradas e saídas em um só lugar — toque numa linha para editar.
+        </p>
       </div>
 
-      <div className="flex gap-2 rounded-xl border border-border/80 bg-card/60 p-1.5 backdrop-blur-sm">
+      <div className="flex gap-2 rounded-xl border border-border bg-muted/40 p-1.5">
         {tabs.map(({ to, label }) => (
           <NavLink
             key={to}
@@ -24,9 +26,9 @@ export default function MovimentosLayout() {
                 'min-h-11 flex-1 rounded-lg px-4 py-2.5 text-center text-sm font-semibold transition-all touch-manipulation',
                 isActive
                   ? to === 'receitas'
-                    ? 'bg-lex-green/20 text-green-200 shadow-inner ring-1 ring-lex-green/35'
-                    : 'bg-lex-orange/20 text-orange-100 shadow-inner ring-1 ring-lex-orange/40'
-                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                    ? 'bg-lex-green/20 text-emerald-950 shadow-sm ring-1 ring-lex-green/40'
+                    : 'bg-lex-orange/20 text-orange-950 shadow-sm ring-1 ring-lex-orange/45'
+                  : 'text-foreground/70 hover:bg-card hover:text-foreground',
               )
             }
           >

@@ -132,7 +132,7 @@ export function EditExpenseModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[min(90dvh,720px)] max-w-2xl overflow-y-auto" showClose>
         <div className="space-y-1 pr-6">
-          <h2 className="text-lg font-semibold text-rose-300">Editar despesa</h2>
+          <h2 className="text-lg font-semibold text-orange-950">Editar despesa</h2>
           {row && (
             <p className="text-sm text-muted-foreground">
               Valor atual: <span className="font-medium text-foreground">{brl(parseFloat(row.amount))}</span>
@@ -141,7 +141,7 @@ export function EditExpenseModal({
         </div>
         {row && (
           <form className="grid gap-4 sm:grid-cols-2" onSubmit={save}>
-            <p className="sm:col-span-2 rounded-lg border border-lex-orange/30 bg-lex-orange/12 px-3 py-2 text-xs leading-relaxed text-orange-100/90">
+            <p className="sm:col-span-2 rounded-lg border border-lex-orange/35 bg-lex-orange/10 px-3 py-2 text-xs leading-relaxed text-foreground">
               <strong>Orçamento:</strong> <strong>Previsto</strong> entra nas projeções; <strong>Pago (realizado)</strong>{' '}
               confirma a saída. Em <strong>conta ou transferência</strong>, o valor pago atualiza o saldo dessa conta; em{' '}
               <strong>cartão</strong>, use o fluxo de fatura para o saldo bancário.

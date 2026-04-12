@@ -129,7 +129,7 @@ export function EditRevenueModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[min(90dvh,720px)] max-w-2xl overflow-y-auto" showClose>
         <div className="space-y-1 pr-6">
-          <h2 className="text-lg font-semibold text-emerald-300">Editar receita</h2>
+          <h2 className="text-lg font-semibold text-emerald-900">Editar receita</h2>
           {row && (
             <p className="text-sm text-muted-foreground">
               Líquido atual: <span className="font-medium text-foreground">{brl(parseFloat(row.netAmount))}</span>
@@ -138,7 +138,7 @@ export function EditRevenueModal({
         </div>
         {row && (
           <form className="grid gap-4 sm:grid-cols-2" onSubmit={save}>
-            <p className="sm:col-span-2 rounded-lg border border-lex-green/30 bg-lex-green/12 px-3 py-2 text-xs leading-relaxed text-green-100/90">
+            <p className="sm:col-span-2 rounded-lg border border-lex-green/35 bg-lex-green/10 px-3 py-2 text-xs leading-relaxed text-foreground">
               <strong>Orçamento:</strong> em <strong>Previsto</strong> o valor entra nas projeções; em{' '}
               <strong>Recebido (realizado)</strong> o líquido passa a contar no <strong>saldo da conta destino</strong>.
               Ajuste bruto, impostos ou líquido antes de guardar se o valor real for diferente.

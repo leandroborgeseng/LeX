@@ -30,7 +30,7 @@ export function TR({ className, ...props }: React.HTMLAttributes<HTMLTableRowEle
 export function TH({ className, ...props }: React.ThHTMLAttributes<HTMLTableCellElement>) {
   return (
     <th
-      className={cn('h-10 px-2 text-left align-middle font-medium text-muted-foreground', className)}
+      className={cn('h-10 px-2 text-left align-middle text-sm font-medium text-foreground/70', className)}
       {...props}
     />
   );

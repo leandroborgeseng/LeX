@@ -70,7 +70,7 @@ export default function Dashboard() {
         <p className="text-sm text-muted-foreground">Visão consolidada e projeções do período</p>
         {s.filterEntity && (
           <p className="mt-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-foreground">
-            A mostrar apenas a entidade <strong>{s.filterEntity.name}</strong> ({s.filterEntity.type}). Altere no seletor
+            Mostrando apenas a entidade <strong>{s.filterEntity.name}</strong> ({s.filterEntity.type}). Altere o seletor
             no topo da página para ver tudo.
           </p>
         )}
@@ -104,25 +104,25 @@ export default function Dashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Saldo PF (contas)</CardTitle>
+            <CardTitle className="text-sm font-medium text-foreground/75">Saldo PF (contas)</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">{brl(s.balances.pf)}</CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Saldo PJ (contas)</CardTitle>
+            <CardTitle className="text-sm font-medium text-foreground/75">Saldo PJ (contas)</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">{brl(s.balances.pj)}</CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Consolidado</CardTitle>
+            <CardTitle className="text-sm font-medium text-foreground/75">Consolidado</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">{brl(s.balances.consolidated)}</CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Financiamentos (saldo)</CardTitle>
+            <CardTitle className="text-sm font-medium text-foreground/75">Financiamentos (saldo)</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">{brl(s.financingOutstanding)}</CardContent>
         </Card>
@@ -131,7 +131,7 @@ export default function Dashboard() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-foreground/75">
               Receita total no ano ({s.annualYear})
             </CardTitle>
           </CardHeader>
@@ -147,7 +147,7 @@ export default function Dashboard() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-foreground/75">
               Despesa total no ano ({s.annualYear})
             </CardTitle>
           </CardHeader>
@@ -163,7 +163,7 @@ export default function Dashboard() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-foreground/75">
               Resultado no ano ({s.annualYear})
             </CardTitle>
           </CardHeader>

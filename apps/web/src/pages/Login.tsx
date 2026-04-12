@@ -56,14 +56,16 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md border-sky-200 bg-white shadow-xl shadow-sky-200/40 ring-1 ring-orange-100">
+      <Card className="w-full max-w-md border border-primary/20 bg-card shadow-lg shadow-primary/10">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center px-2">
             <LexMark className="justify-center [&_img]:h-14" />
           </div>
-          <p className="text-sm font-medium text-slate-600">
-            Controle financeiro unificado <span className="text-sky-700">PF</span> +{' '}
-            <span className="text-emerald-700">PJ</span>
+          <p className="text-sm font-medium text-foreground">
+            Controle financeiro unificado{' '}
+            <span className="font-semibold text-lex-blue">PF</span>
+            <span className="text-muted-foreground"> + </span>
+            <span className="font-semibold text-lex-green">PJ</span>
           </p>
         </CardHeader>
         <CardContent>
@@ -88,13 +90,8 @@ export default function Login() {
                 autoComplete="current-password"
               />
             </div>
-            {err && <p className="text-sm text-destructive">{err}</p>}
-            <p className="text-center text-xs leading-relaxed text-muted-foreground">
-              Padrão: <span className="font-mono text-slate-600">leandro.borges@me.com</span> · senha{' '}
-              <span className="font-mono text-slate-600">Lean777$</span> · o seed roda a cada subida do container e
-              grava de novo essa senha na base.
-            </p>
-            <Button type="submit" className="w-full font-semibold shadow-md shadow-sky-300/40" disabled={loading}>
+            {err && <p className="text-sm font-medium text-destructive">{err}</p>}
+            <Button type="submit" className="w-full font-semibold" disabled={loading}>
               {loading ? 'Entrando…' : 'Entrar'}
             </Button>
           </form>

@@ -198,9 +198,9 @@ export default function Despesas() {
         <p className="rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-orange-900">{listActionMsg}</p>
       )}
 
-      <Card className="border-orange-200/80 shadow-sm shadow-orange-500/10">
-        <CardHeader className="rounded-t-xl border-b border-orange-100 bg-gradient-to-r from-orange-50 via-amber-50/80 to-sky-50">
-          <CardTitle className="text-base text-slate-800">Filtros da lista</CardTitle>
+      <Card className="border border-primary/20 shadow-sm">
+        <CardHeader className="rounded-t-xl border-b border-border bg-gradient-to-r from-lex-orange/[0.08] via-card to-lex-blue/[0.05]">
+          <CardTitle className="text-base text-foreground">Filtros da lista</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 pt-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2 sm:col-span-2 lg:col-span-1">
@@ -338,9 +338,9 @@ export default function Despesas() {
         </CardContent>
       </Card>
 
-      <Card className="border-orange-200/80 shadow-md shadow-orange-500/10">
-        <CardHeader className="rounded-t-xl border-b border-orange-100 bg-gradient-to-r from-orange-50 via-white to-sky-50">
-          <CardTitle className="text-base text-slate-800">Nova despesa</CardTitle>
+      <Card className="border border-primary/20 shadow-sm">
+        <CardHeader className="rounded-t-xl border-b border-border bg-gradient-to-r from-lex-orange/[0.12] via-card to-lex-blue/[0.06]">
+          <CardTitle className="text-base text-foreground">Nova despesa</CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
           <form onSubmit={create} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -491,9 +491,9 @@ export default function Despesas() {
         </CardContent>
       </Card>
 
-      <Card className="border-sky-200/80 shadow-md shadow-sky-500/10">
-        <CardHeader className="rounded-t-xl border-b border-sky-100 bg-gradient-to-r from-sky-50 via-white to-orange-50/70">
-          <CardTitle className="text-base text-slate-800">
+      <Card className="border border-primary/20 shadow-sm">
+        <CardHeader className="rounded-t-xl border-b border-border bg-gradient-to-r from-lex-orange/[0.1] via-card to-lex-blue/[0.06]">
+          <CardTitle className="text-base text-foreground">
             {listFilter === 'proximos' ? 'Despesas a vencer (filtro)' : 'Despesas'}
             <span className="ml-2 text-xs font-normal text-muted-foreground">
               — clique para editar; ✓ marca como pago sem abrir o editor
@@ -561,7 +561,7 @@ export default function Despesas() {
               <li key={r.id} className="flex gap-2">
                 <button
                   type="button"
-                  className="min-w-0 flex-1 rounded-xl border border-orange-200 bg-gradient-to-br from-white to-orange-50/50 px-3 py-3 text-left text-sm shadow-sm transition hover:border-sky-300 hover:shadow-md"
+                  className="min-w-0 flex-1 rounded-xl border border-lex-orange/25 bg-gradient-to-br from-card to-lex-orange/[0.06] px-3 py-3 text-left text-sm shadow-sm transition hover:border-primary/35 hover:shadow-md"
                   onClick={() => openEdit(r)}
                 >
                   <p className="font-medium leading-snug text-slate-900">{r.description}</p>

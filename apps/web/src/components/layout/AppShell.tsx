@@ -99,7 +99,7 @@ function ShellNavLinkBottom({
         const on = prefixActive !== null ? prefixActive : isActive;
         return cn(
           'flex min-h-[3.25rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1 text-[10px] font-medium touch-manipulation',
-          on ? 'text-primary' : 'text-muted-foreground',
+          on ? 'text-primary' : 'text-foreground/65',
         );
       }}
     >
@@ -120,10 +120,10 @@ export function AppShell() {
 
   return (
     <div className="flex min-h-screen min-h-[100dvh]">
-      <aside className="relative hidden w-60 shrink-0 border-r border-border bg-card/50 md:block">
-        <div className="flex h-14 items-center gap-2 border-b border-border px-3 font-semibold tracking-tight">
+      <aside className="relative hidden w-60 shrink-0 border-r border-border bg-muted/30 md:block">
+        <div className="flex h-14 items-center gap-2 border-b border-border bg-card/80 px-3 font-semibold tracking-tight">
           <LexMark />
-          <span className="truncate text-sm font-semibold text-slate-600">Finance</span>
+          <span className="truncate text-sm font-semibold text-foreground/80">Finance</span>
         </div>
         <nav className="max-h-[calc(100vh-7rem)] space-y-0.5 overflow-y-auto p-2">
           {nav.map((item) => (
@@ -132,8 +132,8 @@ export function AppShell() {
               item={item}
               className={(active) =>
                 cn(
-                  'flex min-h-[44px] items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted touch-manipulation',
-                  active && 'bg-primary/15 text-primary',
+                  'flex min-h-[44px] items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground/90 transition-colors hover:bg-card hover:text-foreground touch-manipulation',
+                  active && 'bg-primary/12 font-medium text-primary',
                 )
               }
             />
@@ -248,7 +248,7 @@ export function AppShell() {
           ))}
           <button
             type="button"
-            className="flex min-h-[3.25rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1 text-[10px] font-medium text-muted-foreground touch-manipulation"
+            className="flex min-h-[3.25rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1 text-[10px] font-medium text-foreground/65 touch-manipulation"
             onClick={() => setMenuOpen(true)}
           >
             <Menu className="h-5 w-5" />
