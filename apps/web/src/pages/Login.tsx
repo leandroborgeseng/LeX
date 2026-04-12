@@ -92,9 +92,10 @@ export default function Login() {
             <p className="text-center text-xs leading-relaxed text-muted-foreground">
               Docker/Railway: e-mail por defeito{' '}
               <span className="font-mono text-slate-600">leandro.borges@me.com</span> (ou{' '}
-              <span className="font-mono">LEX_SEED_EMAIL</span>). Só alterar{' '}
-              <span className="font-mono">LEX_SEED_PASSWORD</span> no painel não atualiza a base já criada — defina{' '}
-              <span className="font-mono">LEX_RUN_SEED_ON_BOOT=1</span>, Redeploy, entre e remova essa variável.
+              <span className="font-mono">LEX_SEED_EMAIL</span>). Se o seed correu sem{' '}
+              <span className="font-mono">LEX_SEED_PASSWORD</span>, experimente a senha temporária{' '}
+              <span className="font-mono text-slate-600">lex-bootstrap-temp</span> e troque no perfil. Para repor
+              hash na BD: <span className="font-mono">LEX_RUN_SEED_ON_BOOT=1</span> + Redeploy, depois remova.
             </p>
             <Button type="submit" className="w-full font-semibold shadow-md shadow-sky-300/40" disabled={loading}>
               {loading ? 'Entrando…' : 'Entrar'}

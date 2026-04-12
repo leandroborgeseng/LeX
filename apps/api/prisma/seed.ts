@@ -9,6 +9,12 @@ import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+/**
+ * Se em produção não existir LEX_SEED_PASSWORD, o seed usa esta senha para conseguir entrar
+ * e trocar no perfil. Não deixe assim em produção pública sem redeploy com LEX_SEED_PASSWORD.
+ */
+const LEX_SEED_FALLBACK_PASSWORD = 'lex-bootstrap-temp';
+
 /** Utilizador inicial (bootstrap local / Docker / primeiro deploy). */
 const SEED_USER_EMAIL = (process.env.LEX_SEED_EMAIL ?? 'leandro.borges@me.com').trim().toLowerCase();
 
@@ -16,9 +22,12 @@ function resolveSeedPassword(): string {
   const fromEnv = process.env.LEX_SEED_PASSWORD?.trim();
   if (fromEnv && fromEnv.length > 0) return fromEnv;
   if (process.env.NODE_ENV === 'production' && process.env.LEX_ALLOW_SEED_IN_PROD === '1') {
-    throw new Error(
-      'Defina LEX_SEED_PASSWORD no ambiente antes do seed em produção (primeiro arranque ou repor senha).',
+    console.warn(
+      'LeX seed: LEX_SEED_PASSWORD vazio — a usar senha temporária "' +
+        LEX_SEED_FALLBACK_PASSWORD +
+        '". Entre, altere no perfil e defina LEX_SEED_PASSWORD no ambiente.',
     );
+    return LEX_SEED_FALLBACK_PASSWORD;
   }
   // Desenvolvimento local: previsível; em produção sem LEX_ALLOW_SEED_IN_PROD o seed nem corre.
   return 'lex-local-dev';
