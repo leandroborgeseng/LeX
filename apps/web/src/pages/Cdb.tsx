@@ -33,6 +33,9 @@ type AppRow = {
   active: boolean;
   financialEntityId: string | null;
   notes: string | null;
+  recurrenceEnabled: boolean;
+  recurrenceEndDate: string | null;
+  revenueSyncHorizonMonths: number;
   financialEntity: { name: string } | null;
 };
 
@@ -62,6 +65,9 @@ export default function Cdb() {
   const [pctCdi, setPctCdi] = useState('110');
   const [cdiAa, setCdiAa] = useState('10.5');
   const [formEntity, setFormEntity] = useState('');
+  const [recurrenceEnabled, setRecurrenceEnabled] = useState(false);
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
+  const [revenueSyncHorizonMonths, setRevenueSyncHorizonMonths] = useState('36');
 
   const [projTick, setProjTick] = useState(0);
 
@@ -77,7 +83,11 @@ export default function Cdb() {
   const [eCdi, setECdi] = useState('');
   const [eActive, setEActive] = useState(true);
   const [eNotes, setENotes] = useState('');
+  const [eRecurrence, setERecurrence] = useState(false);
+  const [eRecEnd, setERecEnd] = useState('');
+  const [eHorizon, setEHorizon] = useState('36');
   const [cdbSaving, setCdbSaving] = useState(false);
+  const [syncBusyId, setSyncBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const [e, a] = await Promise.all([api.get<Entity[]>('/financial-entities'), api.get<AppRow[]>('/cdb-applications')]);
@@ -116,6 +126,9 @@ export default function Cdb() {
     setECdi(String(parseFloat(editing.assumedCdiAnnualPercent)));
     setEActive(editing.active);
     setENotes(editing.notes ?? '');
+    setERecurrence(editing.recurrenceEnabled ?? false);
+    setERecEnd(editing.recurrenceEndDate ? dateInputFromIso(editing.recurrenceEndDate) : '');
+    setEHorizon(String(editing.revenueSyncHorizonMonths ?? 36));
   }, [editing, editOpen]);
 
   function openCdbEdit(r: AppRow) {
@@ -140,6 +153,9 @@ export default function Cdb() {
         assumedCdiAnnualPercent: parseFloat(eCdi.replace(',', '.')) || 10.5,
         active: eActive,
         notes: eNotes.trim() ? eNotes : null,
+        recurrenceEnabled: eRecurrence,
+        recurrenceEndDate: eRecEnd ? new Date(eRecEnd).toISOString() : null,
+        revenueSyncHorizonMonths: Math.min(120, Math.max(1, parseInt(eHorizon, 10) || 36)),
       });
       setEditOpen(false);
       setEditing(null);
@@ -172,6 +188,14 @@ export default function Cdb() {
         maturityDate: maturityDate ? new Date(maturityDate).toISOString() : undefined,
         indexerPercentOfCdi: pct,
         assumedCdiAnnualPercent: cdi,
+        recurrenceEnabled,
+        recurrenceEndDate: recurrenceEndDate
+          ? new Date(recurrenceEndDate).toISOString()
+          : undefined,
+        revenueSyncHorizonMonths: Math.min(
+          120,
+          Math.max(1, parseInt(revenueSyncHorizonMonths, 10) || 36),
+        ),
       });
       setName('');
       setInstitution('');
@@ -261,10 +285,63 @@ export default function Cdb() {
                   Ativo na projeção
                 </Label>
               </div>
-              <div className="flex justify-end gap-2">
+              <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    id="cdb-rec-edit"
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-input"
+                    checked={eRecurrence}
+                    onChange={(e) => setERecurrence(e.target.checked)}
+                  />
+                  <Label htmlFor="cdb-rec-edit" className="font-normal">
+                    Lançar receitas estimadas na DRE (mensal)
+                  </Label>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Fim da série (opcional)</Label>
+                    <Input type="date" value={eRecEnd} onChange={(e) => setERecEnd(e.target.value)} disabled={!eRecurrence} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Meses à frente (1–120)</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={120}
+                      value={eHorizon}
+                      onChange={(e) => setEHorizon(e.target.value)}
+                      disabled={!eRecurrence}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
                   Cancelar
                 </Button>
+                {eEntityId && eRecurrence && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={cdbSaving || syncBusyId === editing?.id}
+                    onClick={() => {
+                      if (!editing) return;
+                      setSyncBusyId(editing.id);
+                      setHint('');
+                      void api
+                        .post(`/cdb-applications/${editing.id}/sync-revenues`)
+                        .then(async () => {
+                          setHint('Receitas DRE sincronizadas com a projeção atual.');
+                          await load();
+                        })
+                        .catch(() => setHint('Não foi possível sincronizar receitas.'))
+                        .finally(() => setSyncBusyId(null));
+                    }}
+                  >
+                    {syncBusyId === editing?.id ? 'Sincronizando…' : 'Sincronizar receitas DRE'}
+                  </Button>
+                )}
                 <Button type="submit" disabled={cdbSaving}>
                   {cdbSaving ? 'Salvando…' : 'Salvar'}
                 </Button>
@@ -279,7 +356,9 @@ export default function Cdb() {
         <p className="mt-1 text-sm text-muted-foreground">
           Cadastre aplicações em CDB com rendimento em <strong>% do CDI</strong> (ex.: 100% ou 110%). A projeção usa o{' '}
           <strong>CDI anual assumido</strong> por aplicação, capitalização equivalente a 365 dias, e o{' '}
-          <strong>IR regressivo</strong> sobre o ganho (22,5% até 180 dias; 20% até 360; 17,5% até 720; 15% acima).
+          <strong>IR regressivo</strong> sobre o ganho (22,5% até 180 dias; 20% até 360; 17,5% até 720; 15% acima). Com{' '}
+          <strong>recorrência na DRE</strong>, o sistema gera receitas <strong>PREVISTO</strong> mês a mês (acréscimo
+          patrimonial líquido estimado) na categoria Rendimentos CDB, alinhadas à mesma metodologia da projeção.
         </p>
       </div>
 
@@ -337,6 +416,46 @@ export default function Cdb() {
             <div className="space-y-2">
               <Label>CDI anual assumido (% a.a.)</Label>
               <Input value={cdiAa} onChange={(e) => setCdiAa(e.target.value)} required placeholder="Ex.: 10,5" />
+            </div>
+            <div className="space-y-2 sm:col-span-2 lg:col-span-3 rounded-md border border-border bg-muted/30 p-3">
+              <div className="flex items-center gap-2">
+                <input
+                  id="cdb-rec-new"
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-input"
+                  checked={recurrenceEnabled}
+                  onChange={(e) => setRecurrenceEnabled(e.target.checked)}
+                />
+                <Label htmlFor="cdb-rec-new" className="font-normal">
+                  Lançar receitas estimadas na DRE (mensal)
+                </Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Requer entidade financeira. Os valores são estimativas de acréscimo líquido no mês; marque como
+                recebido na tela de receitas quando houver crédito real.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Fim da série (opcional)</Label>
+                  <Input
+                    type="date"
+                    value={recurrenceEndDate}
+                    onChange={(e) => setRecurrenceEndDate(e.target.value)}
+                    disabled={!recurrenceEnabled}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Meses à frente (1–120)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={120}
+                    value={revenueSyncHorizonMonths}
+                    onChange={(e) => setRevenueSyncHorizonMonths(e.target.value)}
+                    disabled={!recurrenceEnabled}
+                  />
+                </div>
+              </div>
             </div>
             <div className="flex items-end sm:col-span-2 lg:col-span-1">
               <Button type="submit" className="min-h-11 w-full touch-manipulation sm:w-auto">
@@ -442,6 +561,7 @@ export default function Cdb() {
                   <TH>CDI a.a.</TH>
                   <TH>Aplicação</TH>
                   <TH>Ativo</TH>
+                  <TH>DRE</TH>
                   <TH className="w-[88px]"> </TH>
                 </TR>
               </THead>
@@ -456,6 +576,7 @@ export default function Cdb() {
                     <TD>{r.assumedCdiAnnualPercent}%</TD>
                     <TD>{r.applicationDate.slice(0, 10)}</TD>
                     <TD>{r.active ? 'Sim' : 'Não'}</TD>
+                    <TD>{r.recurrenceEnabled && r.financialEntityId ? 'Sim' : '—'}</TD>
                     <TD>
                       <Button type="button" variant="outline" size="sm" onClick={() => openCdbEdit(r)}>
                         Editar
@@ -474,6 +595,9 @@ export default function Cdb() {
                   {r.institution ?? '—'} · {r.indexerPercentOfCdi}% CDI · CDI {r.assumedCdiAnnualPercent}% a.a.
                 </p>
                 <p className="mt-1">{brl(parseFloat(r.principal))}</p>
+                {r.recurrenceEnabled && r.financialEntityId && (
+                  <p className="text-xs text-muted-foreground">Receitas na DRE: sim</p>
+                )}
                 <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => openCdbEdit(r)}>
                   Editar
                 </Button>

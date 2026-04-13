@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   RecurrenceFrequency,
   RevenueStatus,
@@ -133,6 +133,16 @@ export class RevenueService {
 
   async update(id: string, dto: UpdateRevenueDto) {
     const current = await this.findOne(id);
+    const linkedCdbId = (current as { cdbApplicationId?: string | null }).cdbApplicationId;
+    if (
+      linkedCdbId &&
+      dto.status === RevenueStatus.PREVISTO &&
+      current.status === RevenueStatus.RECEBIDO
+    ) {
+      throw new BadRequestException(
+        'Esta receita está ligada a um CDB com projeção recorrente já marcada como recebida; não volte o status para PREVISTO.',
+      );
+    }
 
     let receivedAt: Date | null | undefined = undefined;
     if (dto.receivedAt !== undefined) {

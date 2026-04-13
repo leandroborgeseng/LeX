@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   ExpenseStatus,
   ExpenseType,
@@ -6,6 +6,7 @@ import {
   RecurrenceFrequency,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { FinancingService } from '../financing/financing.service';
 import {
   DEFAULT_FUTURE_OCCURRENCES,
   nextCompetence,
@@ -14,7 +15,10 @@ import { CreateExpenseDto, UpdateExpenseDto } from './dto/expense.dto';
 
 @Injectable()
 export class ExpenseService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly financing: FinancingService,
+  ) {}
 
   async findAll(filters: {
     entityId?: string;
@@ -144,6 +148,16 @@ export class ExpenseService {
 
   async update(id: string, dto: UpdateExpenseDto) {
     const current = await this.findOne(id);
+    const linkedInstId = (current as { financingInstallmentId?: string | null }).financingInstallmentId;
+    if (
+      linkedInstId &&
+      dto.status === ExpenseStatus.PREVISTO &&
+      current.status === ExpenseStatus.PAGO
+    ) {
+      throw new BadRequestException(
+        'Esta despesa está ligada a uma parcela de financiamento já quitada; não volte o status para PREVISTO.',
+      );
+    }
 
     let paidAt: Date | null | undefined = undefined;
     if (dto.paidAt !== undefined) {
@@ -158,7 +172,7 @@ export class ExpenseService {
 
     const { competenceDate, dueDate, paidAt: _ignoredPaid, ...rest } = dto;
 
-    return this.prisma.expense.update({
+    const updated = await this.prisma.expense.update({
       where: { id },
       data: {
         ...rest,
@@ -167,6 +181,20 @@ export class ExpenseService {
         ...(paidAt !== undefined ? { paidAt } : {}),
       },
     });
+
+    const linkId = (updated as { financingInstallmentId?: string | null }).financingInstallmentId;
+    if (
+      linkId &&
+      updated.status === ExpenseStatus.PAGO &&
+      current.status !== ExpenseStatus.PAGO
+    ) {
+      await this.financing.markInstallmentPaidFromLinkedExpense(
+        linkId,
+        updated.paidAt ?? new Date(),
+      );
+    }
+
+    return this.findOne(id);
   }
 
   async regenerateFuture(templateId: string) {

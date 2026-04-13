@@ -35,4 +35,9 @@ export class CdbApplicationController {
   update(@Param('id') id: string, @Body() dto: UpdateCdbApplicationDto) {
     return this.svc.update(id, dto);
   }
+
+  @Post(':id/sync-revenues')
+  syncRevenues(@Param('id') id: string) {
+    return this.svc.syncRevenuesForCdbApplication(id);
+  }
 }

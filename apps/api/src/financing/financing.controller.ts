@@ -41,6 +41,11 @@ export class FinancingController {
     return this.svc.repriceWithNewRate(id, dto.monthlyRate);
   }
 
+  @Post(':id/sync-expenses')
+  syncExpenses(@Param('id') id: string) {
+    return this.svc.syncExpensesForFinancing(id).then(() => this.svc.findOne(id));
+  }
+
   @Post(':id/installments/:number/pay')
   pay(
     @Param('id') id: string,

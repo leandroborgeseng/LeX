@@ -133,8 +133,15 @@ model CdbApplication {
   assumedCdiAnnualPercent   Decimal           @default(10.5)
   active                    Boolean           @default(true)
   notes                     String?
+  /// Gera receitas PREVISTO mês a mês (acréscimo patrimonial líquido) para DRE e planejamento.
+  recurrenceEnabled         Boolean           @default(false)
+  recurrenceEndDate         DateTime?
+  /// Quantos meses à frente materializar lançamentos de receita (1–120).
+  revenueSyncHorizonMonths  Int               @default(36)
   createdAt                 DateTime          @default(now())
   updatedAt                 DateTime          @updatedAt
+
+  linkedRevenues Revenue[]
 }
 
 model HouseholdMember {
@@ -265,6 +272,7 @@ model FinancingInstallment {
   balanceAfter  Decimal
   status        ExpenseStatus @default(PREVISTO)
   paidAt        DateTime?
+  expense       Expense?
 }
 
 model CreditCardInvoice {
@@ -350,6 +358,13 @@ model Revenue {
   recurringParent       Revenue?        @relation("RecurringRevenue", fields: [recurringParentId], references: [id], onDelete: Cascade)
   recurringChildren     Revenue[]       @relation("RecurringRevenue")
   createdAt             DateTime        @default(now())
+
+  cdbApplicationId String?
+  cdbAccrualYear   Int?
+  cdbAccrualMonth  Int?
+  cdbApplication   CdbApplication? @relation(fields: [cdbApplicationId], references: [id], onDelete: Cascade)
+
+  @@unique([cdbApplicationId, cdbAccrualYear, cdbAccrualMonth])
 }
 
 model Expense {
@@ -369,6 +384,8 @@ model Expense {
   paidAt              DateTime?
   status              ExpenseStatus   @default(PREVISTO)
   paymentMethod       PaymentMethod
+  financingInstallmentId String?    @unique
+  financingInstallment   FinancingInstallment? @relation(fields: [financingInstallmentId], references: [id], onDelete: Cascade)
   bankAccountId       String?
   bankAccount         BankAccount?    @relation("ExpenseBankAccount", fields: [bankAccountId], references: [id], onDelete: SetNull)
   creditCardId        String?

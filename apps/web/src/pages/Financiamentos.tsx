@@ -373,6 +373,7 @@ export default function Financiamentos() {
   const [amortSystem, setAmortSystem] = useState<'PRICE' | 'SAC'>('PRICE');
   const [startDate, setStartDate] = useState('');
   const [insuranceCreate, setInsuranceCreate] = useState('0');
+  const [createEntityId, setCreateEntityId] = useState('');
 
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Fin | null>(null);
@@ -382,6 +383,7 @@ export default function Financiamentos() {
   const [eCreditor, setECreditor] = useState('');
   const [eInsurance, setEInsurance] = useState('0');
   const [saving, setSaving] = useState(false);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
 
   async function load() {
     const [e, f] = await Promise.all([api.get<Entity[]>('/financial-entities'), api.get<Fin[]>('/financings')]);
@@ -408,6 +410,7 @@ export default function Financiamentos() {
     await api.post('/financings', {
       kind,
       name,
+      financialEntityId: createEntityId || undefined,
       creditor: creditor || undefined,
       originalValue: parseFloat(originalValue.replace(',', '.')) || 0,
       monthlyRate: parseFloat(monthlyRate.replace(',', '.')) || 0,
@@ -419,7 +422,18 @@ export default function Financiamentos() {
     setName('');
     setCreditor('');
     setOriginalValue('');
+    setCreateEntityId('');
     await load();
+  }
+
+  async function syncExpenses(id: string) {
+    setSyncingId(id);
+    try {
+      await api.post(`/financings/${id}/sync-expenses`);
+      await load();
+    } finally {
+      setSyncingId(null);
+    }
   }
 
   function openEdit(f: Fin) {
@@ -531,9 +545,29 @@ export default function Financiamentos() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Novo contrato</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Com <strong>entidade (PF/PJ)</strong> selecionada, cada parcela em aberto gera automaticamente uma{' '}
+            <strong>despesa PREVISTO</strong> na categoria &quot;Cartão / Financiamentos&quot;, com vencimento igual ao
+            da parcela, para aparecer em Movimentos → Despesas.
+          </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={create} className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-2 md:col-span-2 lg:col-span-3">
+              <Label>Entidade (recomendado para despesas automáticas)</Label>
+              <select
+                className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm"
+                value={createEntityId}
+                onChange={(e) => setCreateEntityId(e.target.value)}
+              >
+                <option value="">— Nenhuma (sem lançamento em despesas)</option>
+                {entities.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="space-y-2">
               <Label>Tipo</Label>
               <select
@@ -639,6 +673,17 @@ export default function Financiamentos() {
                     <Button type="button" variant="secondary" size="sm" onClick={() => openEdit(f)}>
                       Editar
                     </Button>
+                    {f.financialEntityId ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={syncingId === f.id}
+                        onClick={() => void syncExpenses(f.id)}
+                      >
+                        {syncingId === f.id ? 'Sincronizando…' : 'Sincronizar despesas'}
+                      </Button>
+                    ) : null}
                     <Button
                       type="button"
                       variant="outline"

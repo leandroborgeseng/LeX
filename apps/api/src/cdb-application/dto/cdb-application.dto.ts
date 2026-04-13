@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -56,6 +57,21 @@ export class CreateCdbApplicationDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  recurrenceEnabled?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  recurrenceEndDate?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(120)
+  revenueSyncHorizonMonths?: number;
 }
 
 export class UpdateCdbApplicationDto {
@@ -108,4 +124,19 @@ export class UpdateCdbApplicationDto {
   @IsOptional()
   @IsString()
   notes?: string | null;
+
+  @IsOptional()
+  @IsBoolean()
+  recurrenceEnabled?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  recurrenceEndDate?: string | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(120)
+  revenueSyncHorizonMonths?: number;
 }

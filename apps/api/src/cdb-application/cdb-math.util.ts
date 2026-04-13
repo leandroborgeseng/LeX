@@ -159,3 +159,99 @@ export function projectCdbPortfolio(
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
+
+function calendarDateOnly(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/** Último dia do mês civil de `d`. */
+export function endOfCalendarMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0);
+}
+
+function nextMonthEndAfter(monthEnd: Date): Date {
+  return new Date(monthEnd.getFullYear(), monthEnd.getMonth() + 2, 0);
+}
+
+export type CdbMonthlyAccrualRow = {
+  accrualYear: number;
+  accrualMonth: number;
+  competenceDate: Date;
+  dueDate: Date;
+  incrementalGross: number;
+  incrementalIr: number;
+  incrementalNet: number;
+};
+
+/**
+ * Acréscimo mensal de patrimônio (bruto, IR e líquido) entre fechos de mês,
+ * alinhado ao modelo de `projectCdbPortfolio` (avaliação no último dia do mês ou no vencimento).
+ */
+export function monthlyCdbAccrualSchedule(
+  params: {
+    principal: number;
+    applicationDate: Date;
+    maturityDate: Date | null;
+    indexerPercentOfCdi: number;
+    assumedCdiAnnualPercent: number;
+  },
+  horizonMonths: number,
+  recurrenceEnd: Date | null | undefined,
+): CdbMonthlyAccrualRow[] {
+  const horizon = Math.min(120, Math.max(1, Math.round(horizonMonths)));
+  const appDate = calendarDateOnly(params.applicationDate);
+  const rows: CdbMonthlyAccrualRow[] = [];
+  let monthEnd = endOfCalendarMonth(appDate);
+  const maturityEnd = params.maturityDate
+    ? endOfCalendarMonth(calendarDateOnly(params.maturityDate))
+    : null;
+  const recEnd = recurrenceEnd ? endOfCalendarMonth(calendarDateOnly(recurrenceEnd)) : null;
+
+  let prev = snapshotWealth(params, appDate);
+  for (let iter = 0; iter < horizon; iter += 1) {
+    if (recEnd && monthEnd > recEnd) break;
+    if (maturityEnd && monthEnd > maturityEnd) break;
+
+    const curr = snapshotWealth(params, monthEnd);
+    rows.push({
+      accrualYear: monthEnd.getFullYear(),
+      accrualMonth: monthEnd.getMonth() + 1,
+      competenceDate: new Date(monthEnd),
+      dueDate: new Date(monthEnd),
+      incrementalGross: round2(curr.gross - prev.gross),
+      incrementalIr: round2(curr.ir - prev.ir),
+      incrementalNet: round2(curr.net - prev.net),
+    });
+
+    prev = curr;
+    monthEnd = nextMonthEndAfter(monthEnd);
+  }
+  return rows;
+}
+
+function snapshotWealth(
+  params: {
+    principal: number;
+    applicationDate: Date;
+    maturityDate: Date | null;
+    indexerPercentOfCdi: number;
+    assumedCdiAnnualPercent: number;
+  },
+  asOf: Date,
+): { gross: number; ir: number; net: number } {
+  const asOfCal = calendarDateOnly(asOf);
+  const mat = params.maturityDate ? calendarDateOnly(params.maturityDate) : null;
+  const evalDate =
+    mat && asOfCal.getTime() > mat.getTime() ? mat : asOfCal;
+  const daysHeld = calendarDaysBetweenUtc(params.applicationDate, evalDate);
+  const gross = grossBalanceAtDays(
+    params.principal,
+    params.assumedCdiAnnualPercent,
+    params.indexerPercentOfCdi,
+    daysHeld,
+  );
+  const gain = Math.max(0, gross - params.principal);
+  const irRate = irRateOnFixedIncomeGain(daysHeld);
+  const ir = gain * irRate;
+  return { gross, ir, net: gross - ir };
+}
