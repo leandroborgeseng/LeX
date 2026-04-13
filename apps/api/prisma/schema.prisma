@@ -70,6 +70,11 @@ enum AmortizationSystem {
   PRICE
 }
 
+enum FinancingKind {
+  FINANCIAMENTO
+  EMPRESTIMO
+}
+
 enum ContractStatus {
   PROSPECT
   ATIVO
@@ -225,6 +230,7 @@ model Financing {
   id                 String              @id @default(uuid())
   financialEntityId  String?
   financialEntity    FinancialEntity?    @relation(fields: [financialEntityId], references: [id], onDelete: SetNull)
+  kind               FinancingKind       @default(FINANCIAMENTO)
   name               String
   creditor           String?
   originalValue      Decimal
@@ -237,6 +243,11 @@ model Financing {
   totalPaid          Decimal             @default(0)
   interestPaid       Decimal             @default(0)
   amortAccumulated   Decimal             @default(0)
+  /**
+   * Prémio total do seguro referente ao prazo total do contrato (ex.: prestamista).
+   * A devolução na quitação antecipada é estimada de forma proporcional às parcelas ainda não “consumidas”.
+   */
+  insuranceTotalPremium Decimal         @default(0)
   createdAt          DateTime            @default(now())
 
   installments FinancingInstallment[]

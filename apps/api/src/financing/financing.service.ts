@@ -41,6 +41,7 @@ export class FinancingService {
     return this.prisma.financing.create({
       data: {
         financialEntityId: dto.financialEntityId,
+        kind: dto.kind ?? 'FINANCIAMENTO',
         name: dto.name,
         creditor: dto.creditor,
         originalValue: dto.originalValue,
@@ -50,6 +51,7 @@ export class FinancingService {
         startDate: start,
         installmentValue: firstPay,
         currentBalance: dto.originalValue,
+        insuranceTotalPremium: dto.insuranceTotalPremium ?? 0,
         installments: {
           create: schedule.map((r) => ({
             number: r.number,
@@ -61,7 +63,8 @@ export class FinancingService {
             status: ExpenseStatus.PREVISTO,
           })),
         },
-      },
+      // Após `prisma migrate` + `prisma generate`, o tipo passa a incluir `kind`; o cast evita bloqueio com cliente antigo.
+      } as never,
       include: { installments: true },
     });
   }
@@ -144,6 +147,19 @@ export class FinancingService {
     return this.findOne(financingId);
   }
 
+  /**
+   * Atualiza a taxa mensal (% a.m.) e regera todas as parcelas PREVISTO com o saldo atual e o novo juro.
+   * Parcelas já PAGO permanecem inalteradas.
+   */
+  async repriceWithNewRate(financingId: string, monthlyRate: number) {
+    await this.findOne(financingId);
+    await this.prisma.financing.update({
+      where: { id: financingId },
+      data: { monthlyRate } as never,
+    });
+    return this.regenerateFutureInstallments(financingId);
+  }
+
   async update(id: string, dto: UpdateFinancingDto) {
     await this.findOne(id);
     return this.prisma.financing.update({
@@ -152,7 +168,11 @@ export class FinancingService {
         ...(dto.name !== undefined ? { name: dto.name } : {}),
         ...(dto.creditor !== undefined ? { creditor: dto.creditor } : {}),
         ...(dto.financialEntityId !== undefined ? { financialEntityId: dto.financialEntityId } : {}),
-      },
+        ...(dto.kind !== undefined ? { kind: dto.kind } : {}),
+        ...(dto.insuranceTotalPremium !== undefined
+          ? { insuranceTotalPremium: dto.insuranceTotalPremium }
+          : {}),
+      } as never,
       include: { installments: { orderBy: { number: 'asc' } } },
     });
   }

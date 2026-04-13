@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsNumber,
   IsOptional,
@@ -11,11 +12,18 @@ import {
   MinLength,
 } from 'class-validator';
 
+export const FINANCING_KIND_VALUES = ['FINANCIAMENTO', 'EMPRESTIMO'] as const;
+export type FinancingKindDto = (typeof FINANCING_KIND_VALUES)[number];
+
 export class CreateFinancingDto {
   @IsOptional()
   @IsString()
   @MinLength(1)
   financialEntityId?: string;
+
+  @IsOptional()
+  @IsIn(FINANCING_KIND_VALUES)
+  kind?: FinancingKindDto;
 
   @IsString()
   @MinLength(1)
@@ -43,6 +51,12 @@ export class CreateFinancingDto {
 
   @IsDateString()
   startDate!: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  insuranceTotalPremium?: number;
 }
 
 export class PayInstallmentDto {
@@ -50,7 +64,7 @@ export class PayInstallmentDto {
   paidAt!: string;
 }
 
-/** Metadados editáveis sem recalcular parcelas (valor, taxa e tabela continuam nos registos existentes). */
+/** Metadados editáveis sem recalcular parcelas; taxa de juros altera-se só via POST /financings/:id/reprice. */
 export class UpdateFinancingDto {
   @IsOptional()
   @IsString()
@@ -64,4 +78,21 @@ export class UpdateFinancingDto {
   @IsOptional()
   @IsString()
   financialEntityId?: string | null;
+
+  @IsOptional()
+  @IsIn(FINANCING_KIND_VALUES)
+  kind?: FinancingKindDto;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  insuranceTotalPremium?: number;
+}
+
+export class RepriceFinancingDto {
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  monthlyRate!: number;
 }

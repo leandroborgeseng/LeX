@@ -40,7 +40,7 @@ const nav: NavItem[] = [
   { to: '/movimentos/receitas', label: 'Movimentos', icon: Banknote, matchPrefix: '/movimentos' },
   { to: '/contratos', label: 'Contratos', icon: Briefcase },
   { to: '/funcionarios', label: 'Folha / funcionários', icon: Users },
-  { to: '/financiamentos', label: 'Financiamentos', icon: Landmark },
+  { to: '/financiamentos', label: 'Financiamentos / empréstimos', icon: Landmark },
   { to: '/transferencias', label: 'Transferências internas', icon: ArrowLeftRight },
   { to: '/cartoes', label: 'Cartões', icon: CreditCard, matchPrefix: '/cartoes' },
   { to: '/relatorios', label: 'Relatórios', icon: FileText },

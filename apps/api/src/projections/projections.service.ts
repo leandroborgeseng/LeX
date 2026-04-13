@@ -28,7 +28,7 @@ export class ProjectionsService {
     let running = balances.consolidated;
 
     const contracts = await this.prisma.contract.findMany({
-      where: { status: { in: [ContractStatus.ATIVO, ContractStatus.PROSPECT] } },
+      where: { status: { in: [ContractStatus.ATIVO, 'PROSPECT' as ContractStatus] } },
     });
 
     for (let i = 0; i < safeMonths; i++) {
@@ -109,11 +109,23 @@ export class ProjectionsService {
     const future = f.installments.filter((i) => i.status === ExpenseStatus.PREVISTO);
     const futurePay = future.reduce((s, i) => s + Number(i.payment), 0);
     const saved = Math.max(0, futurePay - payoffAmount);
+    const totalPremium = Number((f as { insuranceTotalPremium?: unknown }).insuranceTotalPremium ?? 0);
+    const remainingMonths = future.length;
+    const monthsTotal = f.installmentsCount;
+    const insuranceProportionalRefund =
+      totalPremium > 0 && monthsTotal > 0
+        ? Math.round(totalPremium * (remainingMonths / monthsTotal) * 100) / 100
+        : 0;
     return {
       financingId,
       payoffAmount,
       futureInstallmentsSum: futurePay,
       estimatedInterestAvoided: saved,
+      insuranceTotalPremium: totalPremium,
+      insuranceRemainingMonths: remainingMonths,
+      insuranceContractMonths: monthsTotal,
+      insuranceProportionalRefund,
+      totalEstimatedBenefit: saved + insuranceProportionalRefund,
     };
   }
 

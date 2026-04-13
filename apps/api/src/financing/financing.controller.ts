@@ -2,7 +2,12 @@ import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, UseGuards } fr
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { FinancingService } from './financing.service';
-import { CreateFinancingDto, PayInstallmentDto, UpdateFinancingDto } from './dto/financing.dto';
+import {
+  CreateFinancingDto,
+  PayInstallmentDto,
+  RepriceFinancingDto,
+  UpdateFinancingDto,
+} from './dto/financing.dto';
 
 @ApiTags('financings')
 @ApiBearerAuth()
@@ -29,6 +34,11 @@ export class FinancingController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateFinancingDto) {
     return this.svc.update(id, dto);
+  }
+
+  @Post(':id/reprice')
+  reprice(@Param('id') id: string, @Body() dto: RepriceFinancingDto) {
+    return this.svc.repriceWithNewRate(id, dto.monthlyRate);
   }
 
   @Post(':id/installments/:number/pay')

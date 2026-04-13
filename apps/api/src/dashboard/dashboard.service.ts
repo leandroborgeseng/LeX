@@ -171,7 +171,7 @@ export class DashboardService {
 
     const horizon = new Date();
     horizon.setDate(horizon.getDate() + 30);
-    const [upcomingRev, upcomingExp, contracts, financingsAgg, cards] = await Promise.all([
+    const [upcomingRev, upcomingExp, contracts, financingsAgg, financingsList, cards] = await Promise.all([
       this.prisma.revenue.findMany({
         where: {
           dueDate: { gte: now, lte: horizon },
@@ -200,6 +200,14 @@ export class DashboardService {
         where: scoped ? { financialEntityId: scoped.id } : {},
         _sum: { currentBalance: true },
       }),
+      this.prisma.financing.findMany({
+        where: scoped ? { financialEntityId: scoped.id } : {},
+        orderBy: { name: 'asc' },
+        include: {
+          installments: { orderBy: { number: 'asc' } },
+          financialEntity: true,
+        },
+      }),
       this.prisma.creditCard.findMany({ where: { active: true, ...ew } }),
     ]);
 
@@ -216,6 +224,47 @@ export class DashboardService {
         };
       }),
     );
+
+    const creditCardsDebtTotal = cardSummaries.reduce((s, c) => s + c.monthTotal, 0);
+
+    const debtsFinancing = financingsList.map((f) => {
+      const prev = f.installments.filter((i) => i.status === ExpenseStatus.PREVISTO);
+      const sumPrevisto = prev.reduce((s, i) => s + Number(i.payment), 0);
+      const fk = (f as { kind?: string }).kind ?? 'FINANCIAMENTO';
+      return {
+        id: f.id,
+        name: f.name,
+        creditor: f.creditor,
+        kind: fk,
+        currentBalance: Number(f.currentBalance),
+        installmentsPrevisto: prev.length,
+        sumPrevistoPayments: Math.round(sumPrevisto * 100) / 100,
+        financialEntityName: f.financialEntity?.name ?? null,
+      };
+    });
+
+    const startY = now.getFullYear();
+    const debtProjectionYears = [] as {
+      year: number;
+      financingOutstanding: number;
+      creditCardsSnapshot: number;
+      totalDebt: number;
+    }[];
+    for (let yi = 0; yi <= 5; yi++) {
+      const y = startY + yi;
+      const yearEnd = new Date(y, 11, 31, 23, 59, 59, 999);
+      let finOut = 0;
+      for (const f of financingsList) {
+        finOut += this.projectedFinancingBalanceAt(f, yearEnd);
+      }
+      finOut = Math.round(finOut * 100) / 100;
+      debtProjectionYears.push({
+        year: y,
+        financingOutstanding: finOut,
+        creditCardsSnapshot: Math.round(creditCardsDebtTotal * 100) / 100,
+        totalDebt: Math.round((finOut + creditCardsDebtTotal) * 100) / 100,
+      });
+    }
 
     const entityIdForCharts = scoped?.id;
     const cashflow = await this.projectCashflowMonths(12, entityIdForCharts);
@@ -244,7 +293,10 @@ export class DashboardService {
       upcoming: { revenues: upcomingRev, expenses: upcomingExp },
       activeContracts: contracts,
       creditCards: cardSummaries,
+      creditCardsDebtTotal: Math.round(creditCardsDebtTotal * 100) / 100,
       financingOutstanding: Number(financingsAgg._sum.currentBalance ?? 0),
+      debtsFinancing,
+      debtProjectionYears,
       charts: {
         cashflow12m: cashflow,
         expensesByCategory: expByCat,
@@ -255,6 +307,24 @@ export class DashboardService {
         ? { id: scoped.id, name: scoped.name, type: scoped.type as string }
         : null,
     };
+  }
+
+  /**
+   * Saldo principal de financiamento após todas as parcelas PREVISTO com vencimento até `at` (simulação com base na
+   * tabela cadastrada).
+   */
+  private projectedFinancingBalanceAt(
+    fin: {
+      currentBalance: unknown;
+      installments: { status: string; dueDate: Date; number: number; balanceAfter: unknown }[];
+    },
+    at: Date,
+  ): number {
+    const prev = fin.installments
+      .filter((i) => i.status === ExpenseStatus.PREVISTO && new Date(i.dueDate) <= at)
+      .sort((a, b) => a.number - b.number);
+    if (prev.length === 0) return Number(fin.currentBalance ?? 0);
+    return Number(prev[prev.length - 1].balanceAfter ?? 0);
   }
 
   private async projectCashflowMonths(count: number, entityId?: string) {

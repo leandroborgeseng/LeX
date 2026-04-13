@@ -16,8 +16,13 @@ import api from '@/lib/api';
 import { brl } from '@/lib/format';
 import { usePreferences } from '@/lib/preferences';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { OnboardingCard } from '@/components/layout/OnboardingCard';
+
+function debtKindLabel(k: string) {
+  return k === 'EMPRESTIMO' ? 'Empréstimo' : 'Financiamento';
+}
 
 type Summary = {
   balances: { pf: number; pj: number; consolidated: number };
@@ -30,6 +35,23 @@ type Summary = {
   expensesYear: { pf: number; pj: number; consolidated: number };
   resultYear: { pf: number; pj: number; consolidated: number };
   financingOutstanding: number;
+  creditCardsDebtTotal: number;
+  debtsFinancing: {
+    id: string;
+    name: string;
+    creditor: string | null;
+    kind: string;
+    currentBalance: number;
+    installmentsPrevisto: number;
+    sumPrevistoPayments: number;
+    financialEntityName: string | null;
+  }[];
+  debtProjectionYears: {
+    year: number;
+    financingOutstanding: number;
+    creditCardsSnapshot: number;
+    totalDebt: number;
+  }[];
   charts: {
     cashflow12m: { year: number; month: number; net: number; inflow: number; outflow: number }[];
     expensesByCategory: { name: string; value: number }[];
@@ -61,6 +83,13 @@ export default function Dashboard() {
     net: x.net,
     inflow: x.inflow,
     outflow: x.outflow,
+  }));
+
+  const debtYearly = s.debtProjectionYears.map((p) => ({
+    label: String(p.year),
+    Financiamentos: p.financingOutstanding,
+    'Cartões (ref.)': p.creditCardsSnapshot,
+    Total: p.totalDebt,
   }));
 
   return (
@@ -122,9 +151,139 @@ export default function Dashboard() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-foreground/75">Financiamentos (saldo)</CardTitle>
+            <CardTitle className="text-sm font-medium text-foreground/75">Financiamentos / empréstimos (saldo)</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">{brl(s.financingOutstanding)}</CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-base">Dívidas — financiamentos e cartões</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Lista de contratos com saldo de principal e parcelas em aberto; cartões com fatura do mês atual.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="overflow-x-auto rounded-md border border-border">
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>Tipo</TH>
+                    <TH>Nome</TH>
+                    <TH className="text-right">Saldo / fatura</TH>
+                    <TH className="text-right">Parcelas</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {s.debtsFinancing.length === 0 && s.creditCards.length === 0 ? (
+                    <TR>
+                      <TD colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
+                        Nenhum financiamento cadastrado e nenhum cartão ativo, ou saldos zerados.
+                      </TD>
+                    </TR>
+                  ) : (
+                    <>
+                      {s.debtsFinancing.map((d) => (
+                        <TR key={d.id}>
+                          <TD className="text-xs text-muted-foreground">{debtKindLabel(d.kind)}</TD>
+                          <TD>
+                            <div className="font-medium">{d.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {d.creditor ?? '—'}
+                              {d.financialEntityName ? ` · ${d.financialEntityName}` : ''}
+                            </div>
+                          </TD>
+                          <TD className="text-right font-medium">{brl(d.currentBalance)}</TD>
+                          <TD className="text-right text-xs text-muted-foreground">
+                            {d.installmentsPrevisto > 0 ? (
+                              <>
+                                {d.installmentsPrevisto} em aberto
+                                <br />
+                                <span className="text-[11px]">Soma prev.: {brl(d.sumPrevistoPayments)}</span>
+                              </>
+                            ) : (
+                              '—'
+                            )}
+                          </TD>
+                        </TR>
+                      ))}
+                      {s.creditCards.map((c) => (
+                        <TR key={c.name}>
+                          <TD className="text-xs text-muted-foreground">Cartão</TD>
+                          <TD>
+                            <div className="font-medium">{c.name}</div>
+                            <div className="text-xs text-muted-foreground">Fatura mês atual</div>
+                          </TD>
+                          <TD className="text-right font-medium">{brl(c.monthTotal)}</TD>
+                          <TD className="text-right text-xs text-muted-foreground">
+                            {c.limit != null ? `Lim. ${brl(c.limit)}` : '—'}
+                          </TD>
+                        </TR>
+                      ))}
+                    </>
+                  )}
+                </TBody>
+              </Table>
+            </div>
+            <div className="flex flex-wrap justify-between gap-2 border-t border-border pt-3 text-sm">
+              <span className="text-muted-foreground">Total financiamentos (principal)</span>
+              <span className="font-semibold">{brl(s.financingOutstanding)}</span>
+            </div>
+            <div className="flex flex-wrap justify-between gap-2 text-sm">
+              <span className="text-muted-foreground">Total cartões (faturas mês)</span>
+              <span className="font-semibold">{brl(s.creditCardsDebtTotal)}</span>
+            </div>
+            <Button asChild variant="outline" size="sm" className="touch-manipulation">
+              <Link to="/financiamentos">Gerir financiamentos / empréstimos</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-base">Projeção de quitação (6 anos)</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Saldo de <strong>financiamentos</strong> no fim de cada ano civil, assumindo pagamento das parcelas
+              PREVISTO conforme a tabela. Linha dos <strong>cartões</strong> repete a fatura do mês atual só como
+              referência (não projeta uso futuro do rotativo).
+            </p>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={debtYearly}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 88%)" />
+                <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 11 }} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                <Tooltip
+                  formatter={(v: number) => brl(v)}
+                  contentStyle={{
+                    background: '#ffffff',
+                    border: '1px solid hsl(214 32% 88%)',
+                    color: '#0f172a',
+                    borderRadius: '8px',
+                  }}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="Financiamentos"
+                  stroke="var(--chart-orange)"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="Cartões (ref.)"
+                  stroke="var(--chart-blue)"
+                  strokeDasharray="4 4"
+                  dot={false}
+                />
+                <Line type="monotone" dataKey="Total" stroke="var(--chart-green)" strokeWidth={1.5} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
         </Card>
       </div>
 
@@ -263,34 +422,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Faturas atuais dos cartões</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-muted-foreground">
-                  <th className="py-2 pr-4">Cartão</th>
-                  <th className="py-2 pr-4">Total mês</th>
-                  <th className="py-2">Limite</th>
-                </tr>
-              </thead>
-              <tbody>
-                {s.creditCards.map((c) => (
-                  <tr key={c.name} className="border-b border-border/60">
-                    <td className="py-2 pr-4">{c.name}</td>
-                    <td className="py-2 pr-4">{brl(c.monthTotal)}</td>
-                    <td className="py-2">{c.limit != null ? brl(c.limit) : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -15,7 +15,11 @@ const ITEMS: CmdItem[] = [
   { to: '/cartoes', label: 'Cartões de crédito', keywords: 'credito fatura' },
   { to: '/contratos', label: 'Contratos' },
   { to: '/funcionarios', label: 'Folha / funcionários', keywords: 'salario rh' },
-  { to: '/financiamentos', label: 'Financiamentos', keywords: 'emprestimo divida' },
+  {
+    to: '/financiamentos',
+    label: 'Financiamentos / empréstimos',
+    keywords: 'emprestimo divida financiamento quitação antecipação parcelas',
+  },
   { to: '/transferencias', label: 'Transferências internas' },
   { to: '/relatorios', label: 'Relatórios', keywords: 'dre grafico' },
   { to: '/projecoes', label: 'Projeções', keywords: 'futuro saldo' },
