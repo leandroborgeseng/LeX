@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -62,5 +63,10 @@ export class RevenueController {
   @Post(':id/regenerate-future')
   regenerate(@Param('id') id: string) {
     return this.svc.regenerateFuture(id);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.svc.remove(id);
   }
 }

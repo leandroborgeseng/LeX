@@ -247,4 +247,9 @@ export class ExpenseService {
 
     return this.findOne(templateId);
   }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    await this.prisma.expense.delete({ where: { id } });
+  }
 }

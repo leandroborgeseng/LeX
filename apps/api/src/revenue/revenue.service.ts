@@ -219,4 +219,9 @@ export class RevenueService {
 
     return this.findOne(templateId);
   }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    await this.prisma.revenue.delete({ where: { id } });
+  }
 }

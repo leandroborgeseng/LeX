@@ -68,6 +68,7 @@ export function EditExpenseModal({
   const [paidAtInput, setPaidAtInput] = useState('');
   const [err, setErr] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!row || !open) return;
@@ -125,6 +126,33 @@ export function EditExpenseModal({
       }
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function remove() {
+    if (!row) return;
+    if (
+      !window.confirm(
+        'Eliminar esta despesa do sistema? Se for recorrente com parcelas geradas, o modelo e as ocorrências PREVISTO ligadas podem ser removidos em conjunto.',
+      )
+    ) {
+      return;
+    }
+    setErr('');
+    setDeleting(true);
+    try {
+      await api.delete(`/expenses/${row.id}`);
+      onOpenChange(false);
+      onSaved();
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        const m = error.response?.data?.message;
+        setErr(typeof m === 'string' ? m : 'Não foi possível eliminar.');
+      } else {
+        setErr('Não foi possível eliminar.');
+      }
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -298,6 +326,15 @@ export function EditExpenseModal({
               </Button>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="touch-manipulation">
                 Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={saving || deleting}
+                className="touch-manipulation sm:ml-auto"
+                onClick={() => void remove()}
+              >
+                {deleting ? 'A eliminar…' : 'Eliminar'}
               </Button>
             </div>
           </form>
