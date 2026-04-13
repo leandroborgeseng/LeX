@@ -24,6 +24,22 @@ function debtKindLabel(k: string) {
   return k === 'EMPRESTIMO' ? 'Empréstimo' : 'Financiamento';
 }
 
+type CdbProjMonth = {
+  month: string;
+  totalPrincipal: number;
+  totalGross: number;
+  totalGain: number;
+  totalIr: number;
+  totalNet: number;
+};
+
+type CdbProjection5y = {
+  methodology: string;
+  summary: { applicationCount: number; totalPrincipalNow: number };
+  months: CdbProjMonth[];
+  lastMonth?: CdbProjMonth;
+};
+
 type Summary = {
   balances: { pf: number; pj: number; consolidated: number };
   month: { year: number; month: number };
@@ -64,14 +80,31 @@ type Summary = {
   filterEntity: { id: string; name: string; type: string } | null;
 };
 
+function num(v: unknown): number {
+  const n = typeof v === 'number' ? v : parseFloat(String(v));
+  return Number.isFinite(n) ? n : 0;
+}
+
 export default function Dashboard() {
   const { entityFilterId } = usePreferences();
   const [s, setS] = useState<Summary | null>(null);
+  const [cdb5, setCdb5] = useState<CdbProjection5y | null>(null);
+  const [cdb5Err, setCdb5Err] = useState(false);
 
   useEffect(() => {
     setS(null);
     const q = entityFilterId ? `?financialEntityId=${encodeURIComponent(entityFilterId)}` : '';
     api.get<Summary>(`/dashboard/summary${q}`).then((r) => setS(r.data));
+  }, [entityFilterId]);
+
+  useEffect(() => {
+    setCdb5(null);
+    setCdb5Err(false);
+    const q = entityFilterId ? `?years=5&financialEntityId=${encodeURIComponent(entityFilterId)}` : '?years=5';
+    api
+      .get<CdbProjection5y>(`/cdb-applications/projection/summary${q}`)
+      .then((r) => setCdb5(r.data))
+      .catch(() => setCdb5Err(true));
   }, [entityFilterId]);
 
   if (!s) {
@@ -92,6 +125,19 @@ export default function Dashboard() {
     Total: p.totalDebt,
   }));
 
+  const cdbChart =
+    cdb5?.months?.map((m) => ({
+      month: m.month,
+      líquido: num(m.totalNet),
+      principal: num(m.totalPrincipal),
+    })) ?? [];
+
+  const cdbFirst = cdb5?.months?.[0];
+  const cdbLast = cdb5?.lastMonth ?? cdb5?.months?.[cdb5.months.length - 1];
+  const cdbGain5y =
+    cdbFirst && cdbLast ? Math.max(0, num(cdbLast.totalNet) - num(cdbFirst.totalNet)) : 0;
+  const cdbApps = cdb5?.summary.applicationCount ?? 0;
+
   return (
     <div className="space-y-6">
       <div>
@@ -106,6 +152,101 @@ export default function Dashboard() {
       </div>
 
       <OnboardingCard />
+
+      <Card className="overflow-hidden border-emerald-200/70 bg-gradient-to-br from-emerald-50/90 via-card to-sky-50/60 shadow-sm dark:border-emerald-900/40 dark:from-emerald-950/35 dark:via-card dark:to-sky-950/25">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-semibold text-emerald-950 dark:text-emerald-100">
+            Seu dinheiro trabalhando — projeção de investimentos (5 anos)
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Com base nos <strong className="text-foreground">CDBs ativos</strong> que você cadastrou (% CDI, IR
+            regressivo e CDI anual assumido por aplicação). Não é promessa de retorno: é um cenário para lembrar o
+            poder dos <strong className="text-foreground">juros compostos</strong> e manter o hábito de investir.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {cdb5Err && (
+            <p className="text-sm text-destructive">Não foi possível carregar a projeção de CDB. Tente atualizar a página.</p>
+          )}
+          {!cdb5Err && !cdb5 && <p className="text-sm text-muted-foreground">A carregar projeção…</p>}
+          {cdb5 && cdbApps === 0 && (
+            <div className="rounded-lg border border-dashed border-emerald-300/80 bg-card/60 px-4 py-6 text-center dark:border-emerald-800/50">
+              <p className="text-sm text-foreground">
+                Ainda sem aplicações em CDB no cenário ativo. <strong>Comece hoje</strong> — mesmo valores modestos,
+                com consistência, mudam o gráfico com o tempo.
+              </p>
+              <Button asChild className="mt-4 touch-manipulation" variant="default">
+                <Link to="/cdb">Cadastrar CDB e ver a primeira projeção</Link>
+              </Button>
+            </div>
+          )}
+          {cdb5 && cdbApps > 0 && cdbChart.length > 0 && (
+            <>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-lg border border-emerald-200/60 bg-white/70 px-3 py-3 dark:border-emerald-900/50 dark:bg-card/80">
+                  <p className="text-xs font-medium text-muted-foreground">Patrimônio líquido estimado (último mês)</p>
+                  <p className="mt-1 text-xl font-bold text-emerald-800 dark:text-emerald-200">
+                    {brl(num(cdbLast?.totalNet))}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-emerald-200/60 bg-white/70 px-3 py-3 dark:border-emerald-900/50 dark:bg-card/80">
+                  <p className="text-xs font-medium text-muted-foreground">Crescimento líquido no período (estim.)</p>
+                  <p className="mt-1 text-xl font-bold text-sky-800 dark:text-sky-200">{brl(cdbGain5y)}</p>
+                </div>
+                <div className="rounded-lg border border-emerald-200/60 bg-white/70 px-3 py-3 dark:border-emerald-900/50 dark:bg-card/80">
+                  <p className="text-xs font-medium text-muted-foreground">Principal hoje (soma CDBs)</p>
+                  <p className="mt-1 text-xl font-semibold text-foreground">{brl(num(cdb5.summary.totalPrincipalNow))}</p>
+                </div>
+              </div>
+              <div className="h-72 w-full md:h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={cdbChart}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 32% 88%)" />
+                    <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 10 }} interval={5} />
+                    <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip
+                      formatter={(v: number) => brl(v)}
+                      contentStyle={{
+                        background: '#ffffff',
+                        border: '1px solid hsl(214 32% 88%)',
+                        color: '#0f172a',
+                        borderRadius: '8px',
+                      }}
+                    />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="líquido"
+                      name="Patrimônio líquido (após IR)"
+                      stroke="var(--chart-green)"
+                      dot={false}
+                      strokeWidth={2.5}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="principal"
+                      name="Principal aplicado"
+                      stroke="hsl(215 16% 47%)"
+                      dot={false}
+                      strokeWidth={1}
+                      strokeDasharray="5 5"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">{cdb5.methodology}</p>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild variant="secondary" size="sm" className="touch-manipulation">
+                  <Link to="/cdb">Ajustar CDBs e taxas</Link>
+                </Button>
+                <Button asChild variant="outline" size="sm" className="touch-manipulation">
+                  <Link to="/projecoes">Outras projeções</Link>
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="pb-3">
