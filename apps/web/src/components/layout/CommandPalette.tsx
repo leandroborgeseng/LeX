@@ -23,6 +23,11 @@ const ITEMS: CmdItem[] = [
   },
   { to: '/transferencias', label: 'Transferências internas' },
   { to: '/relatorios', label: 'Relatórios', keywords: 'dre grafico' },
+  {
+    to: '/liquidez-mensal',
+    label: 'Sobra livre no mês',
+    keywords: 'liquidez sobra saldo despesa cdb ano',
+  },
   { to: '/historico', label: 'Histórico financeiro', keywords: 'instantaneo passado comparar' },
   { to: '/projecoes', label: 'Projeções', keywords: 'futuro saldo' },
   { to: '/cdb', label: 'CDB / CDI', keywords: 'investimento' },

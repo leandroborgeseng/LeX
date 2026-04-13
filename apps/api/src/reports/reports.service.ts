@@ -139,6 +139,133 @@ export class ReportsService {
     };
   }
 
+  /** Despesas “CDB”: texto em descrição ou nome da categoria contém “cdb” (minúsculas). */
+  private isCdbExpense(description: string | null, categoryName: string | null): boolean {
+    const s = `${description ?? ''} ${categoryName ?? ''}`.toLowerCase();
+    return s.includes('cdb');
+  }
+
+  /**
+   * Liquidez mensal no ano: receitas e despesas (mesma regra da DRE por competência),
+   * subtotal de despesas ligadas a CDB (heurística por texto) e sobra livre (receitas − despesas).
+   */
+  async monthlyLiquidityYear(
+    scope: EntityScope,
+    year: number,
+    financialEntityId?: string,
+  ) {
+    const yearStart = startOfMonth(new Date(year, 0, 1));
+    const yearEnd = endOfMonth(new Date(year, 11, 1));
+
+    const entityWhere: { financialEntityId?: string | { in: string[] } } = {};
+    const fid = financialEntityId?.trim();
+    if (fid) {
+      entityWhere.financialEntityId = fid;
+    } else {
+      const ids = await this.entityIds(scope);
+      if (ids) entityWhere.financialEntityId = { in: ids };
+    }
+
+    const [revenues, expenses] = await Promise.all([
+      this.prisma.revenue.findMany({
+        where: {
+          competenceDate: { gte: yearStart, lte: yearEnd },
+          status: { in: [RevenueStatus.RECEBIDO, RevenueStatus.PREVISTO] },
+          ...entityWhere,
+        },
+        select: { competenceDate: true, netAmount: true },
+      }),
+      this.prisma.expense.findMany({
+        where: {
+          competenceDate: { gte: yearStart, lte: yearEnd },
+          status: { in: [ExpenseStatus.PAGO, ExpenseStatus.PREVISTO] },
+          ...entityWhere,
+        },
+        select: {
+          competenceDate: true,
+          amount: true,
+          description: true,
+          category: { select: { name: true } },
+        },
+      }),
+    ]);
+
+    const revByMonth = Array.from({ length: 12 }, () => 0);
+    const expByMonth = Array.from({ length: 12 }, () => 0);
+    const cdbExpByMonth = Array.from({ length: 12 }, () => 0);
+
+    for (const r of revenues) {
+      const d = new Date(r.competenceDate);
+      if (d.getFullYear() !== year) continue;
+      revByMonth[d.getMonth()] += Number(r.netAmount);
+    }
+    for (const e of expenses) {
+      const d = new Date(e.competenceDate);
+      if (d.getFullYear() !== year) continue;
+      const mi = d.getMonth();
+      const amt = Number(e.amount);
+      expByMonth[mi] += amt;
+      if (this.isCdbExpense(e.description, e.category?.name ?? null)) {
+        cdbExpByMonth[mi] += amt;
+      }
+    }
+
+    const months: {
+      month: number;
+      monthKey: string;
+      receitas: number;
+      despesas: number;
+      despesasCdb: number;
+      despesasOutras: number;
+      sobraLivre: number;
+    }[] = [];
+
+    let sumR = 0;
+    let sumE = 0;
+    let sumCdb = 0;
+    let sumOutras = 0;
+    let sumSobra = 0;
+
+    for (let m = 1; m <= 12; m++) {
+      const i = m - 1;
+      const receitas = revByMonth[i];
+      const despesas = expByMonth[i];
+      const despesasCdb = cdbExpByMonth[i];
+      const despesasOutras = despesas - despesasCdb;
+      const sobraLivre = receitas - despesas;
+      sumR += receitas;
+      sumE += despesas;
+      sumCdb += despesasCdb;
+      sumOutras += despesasOutras;
+      sumSobra += sobraLivre;
+      months.push({
+        month: m,
+        monthKey: `${year}-${String(m).padStart(2, '0')}`,
+        receitas,
+        despesas,
+        despesasCdb,
+        despesasOutras,
+        sobraLivre,
+      });
+    }
+
+    return {
+      scope,
+      year,
+      financialEntityId: fid ?? null,
+      months,
+      totals: {
+        receitas: sumR,
+        despesas: sumE,
+        despesasCdb: sumCdb,
+        despesasOutras: sumOutras,
+        sobraLivre: sumSobra,
+      },
+      nota:
+        'Receitas: PREVISTO + RECEBIDO. Despesas: PREVISTO + PAGO (competência). Despesas CDB: descrição ou categoria contém "cdb". Sobra livre = receitas − despesas (inclui CDB e demais).',
+    };
+  }
+
   async expensesByCategory(
     scope: EntityScope,
     from: string,

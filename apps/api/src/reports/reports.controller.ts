@@ -43,6 +43,20 @@ export class ReportsController {
     return this.svc.dreMonthly(scope, parseInt(year, 10));
   }
 
+  @Get('monthly-liquidity')
+  monthlyLiquidity(
+    @Query('scope') scope: EntityScope = 'CONSOLIDADO',
+    @Query('year') year = `${new Date().getFullYear()}`,
+    @Query('financialEntityId') financialEntityId?: string,
+  ) {
+    const y = parseInt(year, 10);
+    return this.svc.monthlyLiquidityYear(
+      scope,
+      Number.isFinite(y) ? y : new Date().getFullYear(),
+      financialEntityId,
+    );
+  }
+
   @Get('expenses-by-category')
   expCat(
     @Query('scope') scope: EntityScope = 'CONSOLIDADO',

@@ -183,7 +183,11 @@ export default function Relatorios() {
         <Link to="/cdb" className="font-medium text-primary underline-offset-4 hover:underline">
           CDB / CDI
         </Link>{' '}
-        — cadastro, % do CDI (100% ou 110%), IR regressivo e projeção de 5 anos.
+        — cadastro, % do CDI (100% ou 110%), IR regressivo e projeção de 5 anos. Ver também{' '}
+        <Link to="/liquidez-mensal" className="font-medium text-primary underline-offset-4 hover:underline">
+          sobra livre mês a mês
+        </Link>
+        .
       </p>
 
       <div className="flex flex-wrap gap-4">
