@@ -20,6 +20,7 @@ import { ReportsModule } from './reports/reports.module';
 import { ProjectionsModule } from './projections/projections.module';
 import { LedgerModule } from './ledger/ledger.module';
 import { CdbApplicationModule } from './cdb-application/cdb-application.module';
+import { FinancialHistoryModule } from './financial-history/financial-history.module';
 import { LexBootstrapDiagnosticsService } from './lex-bootstrap-diagnostics.service';
 
 @Module({
@@ -45,6 +46,7 @@ import { LexBootstrapDiagnosticsService } from './lex-bootstrap-diagnostics.serv
     ReportsModule,
     ProjectionsModule,
     CdbApplicationModule,
+    FinancialHistoryModule,
   ],
   providers: [LexBootstrapDiagnosticsService],
 })

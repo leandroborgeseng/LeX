@@ -16,6 +16,7 @@ import {
   Menu,
   TrendingUp,
   UserCog,
+  History,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,7 @@ const nav: NavItem[] = [
   { to: '/transferencias', label: 'Transferências internas', icon: ArrowLeftRight },
   { to: '/cartoes', label: 'Cartões', icon: CreditCard, matchPrefix: '/cartoes' },
   { to: '/relatorios', label: 'Relatórios', icon: FileText },
+  { to: '/historico', label: 'Histórico', icon: History },
   { to: '/cdb', label: 'CDB / CDI', icon: TrendingUp },
   { to: '/projecoes', label: 'Projeções', icon: LineChart },
   { to: '/perfil', label: 'Minha conta', icon: UserCog },

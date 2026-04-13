@@ -18,6 +18,7 @@ export const Financiamentos = lazy(() => import('@/pages/Financiamentos'));
 export const Transferencias = lazy(() => import('@/pages/Transferencias'));
 export const CartaoLancamentos = lazy(() => import('@/pages/CartaoLancamentos'));
 export const Relatorios = lazy(() => import('@/pages/Relatorios'));
+export const HistoricoFinanceiro = lazy(() => import('@/pages/HistoricoFinanceiro'));
 export const Projecoes = lazy(() => import('@/pages/Projecoes'));
 export const Cdb = lazy(() => import('@/pages/Cdb'));
 export const Estrutura = lazy(() => import('@/pages/Estrutura'));

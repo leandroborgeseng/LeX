@@ -117,6 +117,28 @@ model FinancialEntity {
   cardTransactions   CreditCardTransaction[]
   financings         Financing[]
   cdbApplications    CdbApplication[]
+  historySnapshots   FinancialHistorySnapshot[]
+}
+
+/// Instantâneo do estado financeiro (dashboard + resumo CDB) para consulta futura.
+model FinancialHistorySnapshot {
+  id                     String   @id @default(uuid())
+  createdAt              DateTime @default(now())
+  /** Data a que o instantâneo se refere (ex.: fim de mês ou “como estava em …”). */
+  referenceDate          DateTime
+  financialEntityId      String?
+  financialEntity        FinancialEntity? @relation(fields: [financialEntityId], references: [id], onDelete: SetNull)
+  note                   String?
+  consolidatedBalance    Decimal?
+  resultYearConsolidated Decimal?
+  financingOutstanding   Decimal?
+  cdbPrincipalSum        Decimal?
+  cdbProjectedNet5y      Decimal?
+  /** Cópia completa do resumo do dashboard + metadados CDB (JSON). */
+  payload                Json
+
+  @@index([referenceDate])
+  @@index([createdAt])
 }
 
 /// CDB prefixado/pós-fixado indexado a % do CDI — projeção com IR regressivo sobre o rendimento.

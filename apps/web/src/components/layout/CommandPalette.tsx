@@ -23,6 +23,7 @@ const ITEMS: CmdItem[] = [
   },
   { to: '/transferencias', label: 'Transferências internas' },
   { to: '/relatorios', label: 'Relatórios', keywords: 'dre grafico' },
+  { to: '/historico', label: 'Histórico financeiro', keywords: 'instantaneo passado comparar' },
   { to: '/projecoes', label: 'Projeções', keywords: 'futuro saldo' },
   { to: '/cdb', label: 'CDB / CDI', keywords: 'investimento' },
   { to: '/entidades', label: 'Entidades PF/PJ' },

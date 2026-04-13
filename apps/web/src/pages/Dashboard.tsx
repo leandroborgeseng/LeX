@@ -90,6 +90,8 @@ export default function Dashboard() {
   const [s, setS] = useState<Summary | null>(null);
   const [cdb5, setCdb5] = useState<CdbProjection5y | null>(null);
   const [cdb5Err, setCdb5Err] = useState(false);
+  const [snapBusy, setSnapBusy] = useState(false);
+  const [snapMsg, setSnapMsg] = useState('');
 
   useEffect(() => {
     setS(null);
@@ -106,6 +108,22 @@ export default function Dashboard() {
       .then((r) => setCdb5(r.data))
       .catch(() => setCdb5Err(true));
   }, [entityFilterId]);
+
+  async function quickSnapshot() {
+    setSnapBusy(true);
+    setSnapMsg('');
+    try {
+      await api.post('/financial-history/snapshots', {
+        financialEntityId: entityFilterId || undefined,
+        referenceDate: new Date().toISOString(),
+      });
+      setSnapMsg('Instantâneo guardado. Abra Histórico para ver, notar ou comparar.');
+    } catch {
+      setSnapMsg('Não foi possível guardar o instantâneo.');
+    } finally {
+      setSnapBusy(false);
+    }
+  }
 
   if (!s) {
     return <p className="text-muted-foreground">Carregando dashboard…</p>;
@@ -251,6 +269,7 @@ export default function Dashboard() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Ações rápidas</CardTitle>
+          {snapMsg && <p className="mt-2 text-sm text-muted-foreground">{snapMsg}</p>}
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button asChild variant="default" className="touch-manipulation">
@@ -264,6 +283,18 @@ export default function Dashboard() {
           </Button>
           <Button asChild variant="outline" className="touch-manipulation">
             <Link to="/movimentos/despesas?filter=proximos">Despesas a vencer (30 dias)</Link>
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className="touch-manipulation"
+            disabled={snapBusy}
+            onClick={() => void quickSnapshot()}
+          >
+            {snapBusy ? 'A guardar…' : 'Guardar instantâneo no histórico'}
+          </Button>
+          <Button asChild variant="outline" className="touch-manipulation">
+            <Link to="/historico">Ver histórico financeiro</Link>
           </Button>
           <Button asChild variant="ghost" className="touch-manipulation">
             <Link to="/estrutura">Estrutura / cadastros</Link>

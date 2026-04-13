@@ -54,6 +54,7 @@ export default function App() {
             <Route path="/transferencias" element={<Pages.Transferencias />} />
             <Route path="/cartao-lancamentos" element={<Navigate to="/cartoes" replace />} />
             <Route path="/relatorios" element={<Pages.Relatorios />} />
+            <Route path="/historico" element={<Pages.HistoricoFinanceiro />} />
             <Route path="/cdb" element={<Pages.Cdb />} />
             <Route path="/projecoes" element={<Pages.Projecoes />} />
             <Route path="/perfil" element={<Pages.Perfil />} />
