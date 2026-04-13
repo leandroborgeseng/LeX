@@ -10,6 +10,7 @@ export const Categorias = lazy(() => import('@/pages/Categorias'));
 export const Fontes = lazy(() => import('@/pages/Fontes'));
 export const Receitas = lazy(() => import('@/pages/Receitas'));
 export const Despesas = lazy(() => import('@/pages/Despesas'));
+export const MovimentosPlanilha = lazy(() => import('@/pages/MovimentosPlanilha'));
 export const MovimentosLayout = lazy(() => import('@/pages/MovimentosLayout'));
 export const Contratos = lazy(() => import('@/pages/Contratos'));
 export const Funcionarios = lazy(() => import('@/pages/Funcionarios'));

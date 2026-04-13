@@ -12,6 +12,7 @@ const ITEMS: CmdItem[] = [
   { to: '/estrutura', label: 'Estrutura (cadastros)', keywords: 'entidades contas categorias' },
   { to: '/movimentos/receitas', label: 'Movimentos — Receitas', keywords: 'entrada ganho' },
   { to: '/movimentos/despesas', label: 'Movimentos — Despesas', keywords: 'saida gasto' },
+  { to: '/movimentos/planilha', label: 'Movimentos — Planilha PF/PJ', keywords: 'excel importar imposto' },
   { to: '/cartoes', label: 'Cartões de crédito', keywords: 'credito fatura' },
   { to: '/contratos', label: 'Contratos' },
   { to: '/funcionarios', label: 'Folha / funcionários', keywords: 'salario rh' },

@@ -44,6 +44,7 @@ export default function App() {
               <Route index element={<Navigate to="receitas" replace />} />
               <Route path="receitas" element={<Pages.Receitas />} />
               <Route path="despesas" element={<Pages.Despesas />} />
+              <Route path="planilha" element={<Pages.MovimentosPlanilha />} />
             </Route>
             <Route path="/receitas" element={<RedirectToMovimentosReceitas />} />
             <Route path="/despesas" element={<RedirectToMovimentosDespesas />} />
