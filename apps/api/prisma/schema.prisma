@@ -75,6 +75,12 @@ enum FinancingKind {
   EMPRESTIMO
 }
 
+/// Bens imóveis ou móveis (valor estimado) somados ao patrimônio total além do saldo em contas.
+enum PatrimonyAssetKind {
+  IMOVEL
+  MOVEL
+}
+
 enum ContractStatus {
   PROSPECT
   ATIVO
@@ -118,6 +124,24 @@ model FinancialEntity {
   financings         Financing[]
   cdbApplications    CdbApplication[]
   historySnapshots   FinancialHistorySnapshot[]
+  patrimonyAssets    PatrimonyAsset[]
+}
+
+/// Imóvel ou bem móvel com valor estimado para compor o patrimônio (não movimenta caixa automaticamente).
+model PatrimonyAsset {
+  id                String             @id @default(uuid())
+  financialEntityId String
+  financialEntity   FinancialEntity   @relation(fields: [financialEntityId], references: [id], onDelete: Cascade)
+  kind              PatrimonyAssetKind
+  name              String
+  estimatedValue    Decimal
+  acquisitionDate   DateTime?
+  notes             String?
+  active            Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([financialEntityId])
 }
 
 /// Instantâneo do estado financeiro (dashboard + resumo CDB) para consulta futura.

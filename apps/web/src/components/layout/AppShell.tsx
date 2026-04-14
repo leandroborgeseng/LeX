@@ -18,6 +18,7 @@ import {
   UserCog,
   History,
   Wallet,
+  Gem,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,7 @@ type NavItem = {
 const nav: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/estrutura', label: 'Estrutura', icon: LayoutGrid },
+  { to: '/patrimonio-bens', label: 'Patrimônio (bens)', icon: Gem },
   { to: '/movimentos/receitas', label: 'Movimentos', icon: Banknote, matchPrefix: '/movimentos' },
   { to: '/contratos', label: 'Contratos', icon: Briefcase },
   { to: '/funcionarios', label: 'Folha / funcionários', icon: Users },

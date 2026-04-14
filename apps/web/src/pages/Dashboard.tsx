@@ -42,6 +42,8 @@ type CdbProjection5y = {
 
 type Summary = {
   balances: { pf: number; pj: number; consolidated: number };
+  patrimonyAssets: { pf: number; pj: number; consolidated: number };
+  patrimonyTotal: { pf: number; pj: number; consolidated: number };
   month: { year: number; month: number };
   revenuesMonth: { pf: number; pj: number; consolidated: number };
   expensesMonth: { pf: number; pj: number; consolidated: number };
@@ -303,23 +305,47 @@ export default function Dashboard() {
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="border-primary/25 bg-primary/[0.04] lg:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-foreground/75">Saldo PF (contas)</CardTitle>
+            <CardTitle className="text-sm font-medium text-foreground/80">Patrimônio total (contas + bens)</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Bens: imóveis e móveis com valor estimado.{' '}
+              <Link to="/patrimonio-bens" className="font-medium text-primary underline-offset-4 hover:underline">
+                Gerir bens
+              </Link>
+            </p>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">{brl(s.balances.pf)}</CardContent>
+          <CardContent className="space-y-3">
+            <p className="text-2xl font-semibold tracking-tight">{brl(s.patrimonyTotal.consolidated)}</p>
+            {!s.filterEntity && (
+              <p className="border-t border-border/60 pt-3 text-xs text-muted-foreground">
+                <span className="mr-3">PF: {brl(s.patrimonyTotal.pf)}</span>
+                <span>PJ: {brl(s.patrimonyTotal.pj)}</span>
+              </p>
+            )}
+          </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-foreground/75">Saldo PJ (contas)</CardTitle>
-          </CardHeader>
-          <CardContent className="text-2xl font-semibold">{brl(s.balances.pj)}</CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-foreground/75">Consolidado</CardTitle>
+            <CardTitle className="text-sm font-medium text-foreground/75">Só saldo em contas</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">{brl(s.balances.consolidated)}</CardContent>
+          {!s.filterEntity && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              PF {brl(s.balances.pf)} · PJ {brl(s.balances.pj)}
+            </p>
+          )}
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-foreground/75">Bens (estimado)</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold">{brl(s.patrimonyAssets.consolidated)}</CardContent>
+          {!s.filterEntity && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              PF {brl(s.patrimonyAssets.pf)} · PJ {brl(s.patrimonyAssets.pj)}
+            </p>
+          )}
         </Card>
         <Card>
           <CardHeader className="pb-2">

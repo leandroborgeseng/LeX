@@ -18,6 +18,7 @@ export class ProjectionsService {
   async monthlyBase(months: number) {
     const safeMonths = Math.max(1, Math.min(120, months || 12));
     const balances = await this.balance.entityTypeTotals();
+    const patrimonyAssets = await this.balance.patrimonyAssetsTypeTotals();
     const now = new Date();
     const rows: {
       month: string;
@@ -25,7 +26,7 @@ export class ProjectionsService {
       inflow: number;
       outflow: number;
     }[] = [];
-    let running = balances.consolidated;
+    let running = balances.consolidated + patrimonyAssets.consolidated;
 
     const contracts = await this.prisma.contract.findMany({
       where: { status: { in: [ContractStatus.ATIVO, 'PROSPECT' as ContractStatus] } },
@@ -66,7 +67,12 @@ export class ProjectionsService {
         outflow,
       });
     }
-    return { startingConsolidated: balances.consolidated, months: rows };
+    return {
+      startingBank: balances.consolidated,
+      startingPatrimonyAssets: patrimonyAssets.consolidated,
+      startingConsolidated: balances.consolidated + patrimonyAssets.consolidated,
+      months: rows,
+    };
   }
 
   async conservative(months: number) {

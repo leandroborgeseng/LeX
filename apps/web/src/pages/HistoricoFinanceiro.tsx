@@ -145,7 +145,7 @@ export default function HistoricoFinanceiro() {
               {detail.note && <p className="rounded-md bg-muted/60 px-3 py-2">Nota: {detail.note}</p>}
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="rounded border border-border p-2">
-                  <div className="text-xs text-muted-foreground">Saldo consolidado (contas)</div>
+                  <div className="text-xs text-muted-foreground">Patrimônio total (contas + bens)</div>
                   <div className="font-semibold">{brl(num(detail.consolidatedBalance))}</div>
                 </div>
                 <div className="rounded border border-border p-2">
@@ -255,7 +255,7 @@ export default function HistoricoFinanceiro() {
                 <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <Tooltip formatter={(v: number) => brl(v)} />
                 <Legend />
-                <Line type="monotone" dataKey="saldo" name="Saldo consolidado" stroke="var(--chart-blue)" strokeWidth={2} dot />
+                <Line type="monotone" dataKey="saldo" name="Patrimônio total" stroke="var(--chart-blue)" strokeWidth={2} dot />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -273,7 +273,7 @@ export default function HistoricoFinanceiro() {
                 <TH>Ref.</TH>
                 <TH>Guardado</TH>
                 <TH>Âmbito</TH>
-                <TH className="text-right">Saldo cons.</TH>
+                <TH className="text-right">Patrim. total</TH>
                 <TH className="text-right">Res. ano</TH>
                 <TH className="text-right">Financ.</TH>
                 <TH>Nota</TH>

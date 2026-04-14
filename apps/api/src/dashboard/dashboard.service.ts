@@ -42,6 +42,21 @@ export class DashboardService {
         })()
       : await this.balance.entityTypeTotals();
 
+    const patrimonyAssets = scoped
+      ? await (async () => {
+          const t = await this.balance.entityPatrimonyAssetsTotal(scoped.id);
+          return scoped.type === EntityType.PF
+            ? { pf: t, pj: 0, consolidated: t }
+            : { pf: 0, pj: t, consolidated: t };
+        })()
+      : await this.balance.patrimonyAssetsTypeTotals();
+
+    const patrimonyTotal = {
+      pf: Math.round((balances.pf + patrimonyAssets.pf) * 100) / 100,
+      pj: Math.round((balances.pj + patrimonyAssets.pj) * 100) / 100,
+      consolidated: Math.round((balances.consolidated + patrimonyAssets.consolidated) * 100) / 100,
+    };
+
     const revWhere = {
       competenceDate: { gte: start, lte: end },
       status: { in: [RevenueStatus.PREVISTO, RevenueStatus.RECEBIDO, RevenueStatus.ATRASADO] },
@@ -275,6 +290,8 @@ export class DashboardService {
 
     return {
       balances,
+      patrimonyAssets,
+      patrimonyTotal,
       month: { year: y, month: m },
       revenuesMonth: { pf: rPf, pj: rPj, consolidated: rPf + rPj },
       expensesMonth: { pf: ePf, pj: ePj, consolidated: ePf + ePj },

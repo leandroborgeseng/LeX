@@ -33,6 +33,7 @@ export default function App() {
           >
             <Route path="/" element={<Pages.Dashboard />} />
             <Route path="/estrutura" element={<Pages.Estrutura />} />
+            <Route path="/patrimonio-bens" element={<Pages.PatrimonioBens />} />
             <Route path="/entidades" element={<Pages.Entidades />} />
             <Route path="/contas" element={<Pages.Contas />} />
             <Route path="/cartoes" element={<Pages.Cartoes />} />

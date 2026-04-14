@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import {
   Building2,
   CreditCard,
+  Gem,
   Landmark,
   PieChart,
   Users,
@@ -22,6 +23,12 @@ const sections = [
     title: 'Contas bancárias',
     description: 'Contas corrente, poupança e saldos por entidade.',
     icon: Landmark,
+  },
+  {
+    to: '/patrimonio-bens',
+    title: 'Patrimônio — bens',
+    description: 'Imóveis e bens móveis com valor estimado para o patrimônio total.',
+    icon: Gem,
   },
   {
     to: '/cartoes',

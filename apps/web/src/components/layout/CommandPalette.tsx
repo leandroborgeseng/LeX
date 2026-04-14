@@ -10,6 +10,11 @@ type CmdItem = { to: string; label: string; keywords?: string };
 const ITEMS: CmdItem[] = [
   { to: '/', label: 'Dashboard', keywords: 'inicio home' },
   { to: '/estrutura', label: 'Estrutura (cadastros)', keywords: 'entidades contas categorias' },
+  {
+    to: '/patrimonio-bens',
+    label: 'Patrimônio — imóveis e bens móveis',
+    keywords: 'imovel movel casa carro valor estimado',
+  },
   { to: '/movimentos/receitas', label: 'Movimentos — Receitas', keywords: 'entrada ganho' },
   { to: '/movimentos/despesas', label: 'Movimentos — Despesas', keywords: 'saida gasto' },
   { to: '/movimentos/planilha', label: 'Movimentos — Planilha PF/PJ', keywords: 'excel importar imposto' },

@@ -23,4 +23,5 @@ export const HistoricoFinanceiro = lazy(() => import('@/pages/HistoricoFinanceir
 export const Projecoes = lazy(() => import('@/pages/Projecoes'));
 export const Cdb = lazy(() => import('@/pages/Cdb'));
 export const Estrutura = lazy(() => import('@/pages/Estrutura'));
+export const PatrimonioBens = lazy(() => import('@/pages/PatrimonioBens'));
 export const Perfil = lazy(() => import('@/pages/Perfil'));

@@ -22,6 +22,7 @@ import { LedgerModule } from './ledger/ledger.module';
 import { CdbApplicationModule } from './cdb-application/cdb-application.module';
 import { FinancialHistoryModule } from './financial-history/financial-history.module';
 import { LexBootstrapDiagnosticsService } from './lex-bootstrap-diagnostics.service';
+import { PatrimonyAssetModule } from './patrimony-asset/patrimony-asset.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { LexBootstrapDiagnosticsService } from './lex-bootstrap-diagnostics.serv
     ProjectionsModule,
     CdbApplicationModule,
     FinancialHistoryModule,
+    PatrimonyAssetModule,
   ],
   providers: [LexBootstrapDiagnosticsService],
 })

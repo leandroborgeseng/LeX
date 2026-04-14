@@ -76,6 +76,31 @@ export class BalanceService {
     };
   }
 
+  /** Soma do valor estimado dos bens ativos (imóveis e móveis) por entidade. */
+  async entityPatrimonyAssetsTotal(entityId: string): Promise<number> {
+    const agg = await this.prisma.patrimonyAsset.aggregate({
+      where: { financialEntityId: entityId, active: true },
+      _sum: { estimatedValue: true },
+    });
+    return Math.round(d(agg._sum.estimatedValue) * 100) / 100;
+  }
+
+  async patrimonyAssetsTypeTotals(): Promise<{ pf: number; pj: number; consolidated: number }> {
+    const entities = await this.prisma.financialEntity.findMany();
+    let pf = 0;
+    let pj = 0;
+    for (const e of entities) {
+      const t = await this.entityPatrimonyAssetsTotal(e.id);
+      if (e.type === EntityType.PF) pf += t;
+      else pj += t;
+    }
+    return {
+      pf: Math.round(pf * 100) / 100,
+      pj: Math.round(pj * 100) / 100,
+      consolidated: Math.round((pf + pj) * 100) / 100,
+    };
+  }
+
   async financingTotalOutstanding(): Promise<number> {
     const agg = await this.prisma.financing.aggregate({ _sum: { currentBalance: true } });
     return Math.round(d(agg._sum.currentBalance) * 100) / 100;

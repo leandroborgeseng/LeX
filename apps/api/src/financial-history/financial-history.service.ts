@@ -34,7 +34,7 @@ export class FinancialHistoryService {
       lastMonthTotalNet: last != null ? Number((last as { totalNet?: unknown }).totalNet) : null,
     };
 
-    const consolidated = summary.balances.consolidated;
+    const consolidated = summary.patrimonyTotal.consolidated;
     const resYr = summary.resultYear.consolidated;
     const finOut = summary.financingOutstanding;
     const cdbPri = cdbProj.summary.totalPrincipalNow;
