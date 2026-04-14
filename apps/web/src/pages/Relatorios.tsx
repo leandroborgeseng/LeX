@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '@/lib/api';
 import { brl } from '@/lib/format';
@@ -39,6 +39,11 @@ type CashflowRevRow = {
   status: string;
 };
 
+type CashflowFinInstall = {
+  number: number;
+  financing: { name: string; kind?: string | null; installmentsCount: number };
+};
+
 type CashflowExpRow = {
   id: string;
   description: string;
@@ -47,7 +52,31 @@ type CashflowExpRow = {
   category?: { name: string } | null;
   originator?: { name: string } | null;
   status: string;
+  financingInstallment?: CashflowFinInstall | null;
 };
+
+function isFinancingParcelDescription(description: string) {
+  const d = description.trim();
+  if (!d || d.toLowerCase().includes('cdb')) return false;
+  return (d.includes('Financiamento:') || d.includes('Empréstimo:')) && d.includes('Parcela ');
+}
+
+function isFinancingInstallmentExpense(row: CashflowExpRow) {
+  return row.financingInstallment != null || isFinancingParcelDescription(row.description);
+}
+
+function finKindShort(kind?: string | null) {
+  return kind === 'EMPRESTIMO' ? 'Empréstimo' : 'Financiamento';
+}
+
+function parcelaLabel(row: CashflowExpRow): string {
+  const fi = row.financingInstallment;
+  if (fi?.financing) {
+    const k = finKindShort(fi.financing.kind);
+    return `${k}: ${fi.financing.name} · ${fi.number}/${fi.financing.installmentsCount}`;
+  }
+  return '—';
+}
 
 type CashflowMonthly = {
   period: { year: number; month: number };
@@ -176,6 +205,15 @@ export default function Relatorios() {
     total: x.total,
     fullSource: x.source,
   }));
+
+  const cashflowParcelas = useMemo(
+    () => (cashflow ? cashflow.expenses.filter(isFinancingInstallmentExpense) : []),
+    [cashflow],
+  );
+  const cashflowOutrasDespesas = useMemo(
+    () => (cashflow ? cashflow.expenses.filter((e) => !isFinancingInstallmentExpense(e)) : []),
+    [cashflow],
+  );
 
   return (
     <div className="space-y-6">
@@ -369,7 +407,13 @@ export default function Relatorios() {
               <span className="font-medium text-foreground">
                 {MESES[(cashflow?.period.month ?? cfMonth) - 1]}/{cashflow?.period.year ?? year}
               </span>
-              , sem filtrar por status (diferente da DRE).
+              , sem filtrar por status (diferente da DRE). As parcelas de financiamento e empréstimo aparecem na
+              secção dedicada abaixo (lançamentos gerados a partir dos contratos com entidade financeira). Se estiver
+              vazio, sincronize em{' '}
+              <Link to="/liquidez-mensal" className="font-medium text-primary underline-offset-4 hover:underline">
+                Sobra livre no mês
+              </Link>
+              .
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -437,7 +481,50 @@ export default function Relatorios() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-sm font-medium">Despesas ({cashflow.expenses.length})</h3>
+                  <h3 className="text-sm font-medium">
+                    Prestações — financiamentos e empréstimos ({cashflowParcelas.length})
+                  </h3>
+                  {cashflowParcelas.length === 0 ? (
+                    <p className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                      Nenhuma parcela neste mês. Confirme que o contrato tem entidade (PF/PJ) em{' '}
+                      <Link to="/financiamentos" className="font-medium text-primary underline-offset-4 hover:underline">
+                        Financiamentos
+                      </Link>{' '}
+                      e use «Atualizar CDB e contratos» na página de liquidez mensal.
+                    </p>
+                  ) : (
+                    <div className="max-h-52 overflow-auto rounded-md border border-border">
+                      <Table>
+                        <THead>
+                          <TR>
+                            <TH>Contrato / parcela</TH>
+                            <TH>Descrição</TH>
+                            <TH>Categoria</TH>
+                            <TH className="text-right">Valor</TH>
+                            <TH>Estado</TH>
+                          </TR>
+                        </THead>
+                        <TBody>
+                          {cashflowParcelas.map((row) => (
+                            <TR key={row.id}>
+                              <TD className="max-w-[11rem] truncate text-xs font-medium" title={parcelaLabel(row)}>
+                                {parcelaLabel(row)}
+                              </TD>
+                              <TD className="max-w-[9rem] truncate text-xs text-muted-foreground" title={row.description}>
+                                {row.description}
+                              </TD>
+                              <TD className="text-xs text-muted-foreground">{row.category?.name ?? '—'}</TD>
+                              <TD className="text-right text-xs tabular-nums">{brl(money(row.amount))}</TD>
+                              <TD className="text-xs">{row.status}</TD>
+                            </TR>
+                          ))}
+                        </TBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">Outras despesas ({cashflowOutrasDespesas.length})</h3>
                   <div className="max-h-52 overflow-auto rounded-md border border-border">
                     <Table>
                       <THead>
@@ -448,7 +535,7 @@ export default function Relatorios() {
                         </TR>
                       </THead>
                       <TBody>
-                        {cashflow.expenses.map((row) => (
+                        {cashflowOutrasDespesas.map((row) => (
                           <TR key={row.id}>
                             <TD className="max-w-[10rem] truncate text-xs" title={row.description}>
                               {row.description}

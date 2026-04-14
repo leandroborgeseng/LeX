@@ -88,7 +88,17 @@ function expenseApiToRow(e: {
   bankAccountId: string | null;
   creditCardId: string | null;
   paidAt?: string | Date | null;
+  financingInstallment?: {
+    number: number;
+    financing: { name: string; kind?: string | null; installmentsCount: number };
+  } | null;
 }): ExpenseRow {
+  let contractParcel: string | null = null;
+  const fi = e.financingInstallment;
+  if (fi?.financing) {
+    const kindLabel = fi.financing.kind === 'EMPRESTIMO' ? 'Empréstimo' : 'Financiamento';
+    contractParcel = `${kindLabel}: ${fi.financing.name} · ${fi.number}/${fi.financing.installmentsCount}`;
+  }
   return {
     id: e.id,
     financialEntityId: e.financialEntityId,
@@ -104,6 +114,7 @@ function expenseApiToRow(e: {
     bankAccountId: e.bankAccountId,
     creditCardId: e.creditCardId,
     paidAt: e.paidAt ? iso(e.paidAt) : null,
+    contractParcel,
   };
 }
 
@@ -391,6 +402,7 @@ export default function LiquidezMensal() {
             <Table>
               <THead>
                 <TR>
+                  {detail?.segment === 'financing' && <TH>Contrato / parcela</TH>}
                   <TH>Descrição</TH>
                   <TH className="text-right">Valor</TH>
                   <TH>Competência</TH>
@@ -401,6 +413,11 @@ export default function LiquidezMensal() {
               <TBody>
                 {expenseLines.map((row) => (
                   <TR key={row.id}>
+                    {detail?.segment === 'financing' && (
+                      <TD className="max-w-[200px] truncate text-sm text-muted-foreground" title={row.contractParcel ?? ''}>
+                        {row.contractParcel ?? '—'}
+                      </TD>
+                    )}
                     <TD className="max-w-[200px] truncate">{row.description}</TD>
                     <TD className="text-right tabular-nums">{brl(parseFloat(row.amount))}</TD>
                     <TD className="text-muted-foreground">{formatDateBr(row.competenceDate)}</TD>

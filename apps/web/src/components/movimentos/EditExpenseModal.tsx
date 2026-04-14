@@ -22,6 +22,8 @@ export type ExpenseRow = {
   bankAccountId: string | null;
   creditCardId: string | null;
   paidAt?: string | null;
+  /** Preenchido na liquidez mensal para despesas ligadas a parcela de contrato */
+  contractParcel?: string | null;
 };
 
 type Entity = { id: string; name: string };

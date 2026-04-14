@@ -51,7 +51,19 @@ export class ReportsService {
           competenceDate: { gte: start, lte: end },
           ...(ids === undefined ? {} : { financialEntityId: { in: ids } }),
         },
-        include: { category: true, originator: true, financialEntity: true },
+        include: {
+          category: true,
+          originator: true,
+          financialEntity: true,
+          financingInstallment: {
+            select: {
+              number: true,
+              financing: {
+                select: { name: true, kind: true, installmentsCount: true },
+              },
+            },
+          },
+        },
       }),
     ]);
 
@@ -422,7 +434,9 @@ export class ReportsService {
           select: {
             id: true,
             number: true,
-            financing: { select: { id: true, name: true, kind: true } },
+            financing: {
+              select: { id: true, name: true, kind: true, installmentsCount: true },
+            },
           },
         },
       },
