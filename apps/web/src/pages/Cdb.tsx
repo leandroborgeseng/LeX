@@ -381,8 +381,9 @@ export default function Cdb() {
           <strong>IR regressivo</strong> sobre o ganho (22,5% até 180 dias; 20% até 360; 17,5% até 720; 15% acima). Com{' '}
           <strong>recorrência na DRE</strong>, o sistema gera receitas <strong>PREVISTO</strong> mês a mês (acréscimo
           patrimonial líquido estimado) na categoria Rendimentos CDB, alinhadas à mesma metodologia da projeção. Com{' '}
-          <strong>aporte mensal</strong> (valor opcional), gera também despesas <strong>PREVISTO</strong> na categoria
-          Aportes CDB — aparecem na liquidez mensal em “Desp. CDB”.
+          <strong>aporte mensal</strong> (valor opcional), gera despesas <strong>PREVISTO</strong> na categoria Aportes CDB
+          — na liquidez mensal em “Desp. CDB”. O aporte <strong>não depende</strong> da recorrência de receitas: basta
+          entidade, valor maior que zero e aplicação ativa; ao gravar ou ao subir o servidor, os meses são sincronizados.
         </p>
       </div>
 

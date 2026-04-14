@@ -9,6 +9,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCdbApplicationDto, UpdateCdbApplicationDto } from './dto/cdb-application.dto';
+import { parseYearMonth } from '../common/utils/date.util';
 import { monthlyCdbAccrualSchedule, projectCdbPortfolio } from './cdb-math.util';
 
 const CDB_REVENUE_CATEGORY = 'Rendimentos CDB';
@@ -60,23 +61,68 @@ export class CdbApplicationService {
     return c.id;
   }
 
+  /** Remove despesas PREVISTO geradas para esta aplicação CDB (só este fluxo usa `cdbApplicationId` em despesa). */
   private async removePrevistoCdbLinkedAporteExpenses(cdbApplicationId: string) {
     await this.prisma.expense.deleteMany({
       where: {
         cdbApplicationId,
-        cdbAporteYear: { not: null },
         status: ExpenseStatus.PREVISTO,
       },
     });
   }
 
   /**
-   * Despesas PREVISTO de aporte mensal (mesmo calendário das receitas de acréscimo), quando `monthlyAporteAmount` > 0.
+   * Liga despesa antiga (sem cdbApplicationId / chave de mês) criada manualmente ou antes da migração.
+   */
+  private async tryLinkOrphanCdbAporteExpense(
+    row: { id: string; name: string; financialEntityId: string },
+    m: { accrualYear: number; accrualMonth: number; competenceDate: Date; dueDate: Date },
+    aporte: number,
+    label: string,
+  ): Promise<boolean> {
+    const { start, end } = parseYearMonth(m.accrualYear, m.accrualMonth);
+    const name = row.name.trim();
+    const needle = `· ${label} (aporte mensal)`;
+    const candidates = await this.prisma.expense.findMany({
+      where: {
+        financingInstallmentId: null,
+        cdbApplicationId: null,
+        financialEntityId: row.financialEntityId,
+        competenceDate: { gte: start, lte: end },
+        description: { contains: needle },
+      },
+    });
+    const filtered = candidates.filter(
+      (e) =>
+        e.description.includes('CDB:') &&
+        e.description.includes(name) &&
+        (e.description.includes('(aporte mensal)') || e.description.toLowerCase().includes('aporte')),
+    );
+    if (filtered.length !== 1) return false;
+    await this.prisma.expense.update({
+      where: { id: filtered[0].id },
+      data: {
+        cdbApplicationId: row.id,
+        cdbAporteYear: m.accrualYear,
+        cdbAporteMonth: m.accrualMonth,
+        amount: aporte,
+        competenceDate: m.competenceDate,
+        dueDate: m.dueDate,
+        notes: filtered[0].notes?.trim() ? filtered[0].notes : CDB_APORTE_NOTES,
+      },
+    });
+    return true;
+  }
+
+  /**
+   * Despesas PREVISTO de aporte mensal (calendário de competência alinhado ao rendimento CDB), quando `monthlyAporteAmount` > 0.
+   * Não exige `recurrenceEnabled`: pode haver só aportes sem materializar receitas estimadas.
    */
   async syncAporteExpensesForCdbApplication(id: string) {
     const row = await this.findOne(id);
     const aporte = Number(row.monthlyAporteAmount ?? 0);
-    if (!row.recurrenceEnabled || !row.active || !row.financialEntityId || aporte <= 0) {
+    const entityId = row.financialEntityId;
+    if (!row.active || !entityId || aporte <= 0) {
       await this.removePrevistoCdbLinkedAporteExpenses(id);
       return this.findOne(id);
     }
@@ -127,9 +173,17 @@ export class CdbApplicationService {
         continue;
       }
 
+      const linked = await this.tryLinkOrphanCdbAporteExpense(
+        { id: row.id, name: row.name, financialEntityId: entityId },
+        m,
+        aporte,
+        label,
+      );
+      if (linked) continue;
+
       await this.prisma.expense.create({
         data: {
-          financialEntityId: row.financialEntityId,
+          financialEntityId: entityId,
           description,
           type: ExpenseType.ESPORADICA,
           categoryId,
@@ -147,6 +201,25 @@ export class CdbApplicationService {
     }
 
     return this.findOne(id);
+  }
+
+  /**
+   * Reexecuta materialização de receitas e despesas de aporte para todas as aplicações com entidade
+   * (útil após migração de schema ou deploy).
+   */
+  async syncAllWithFinancialEntity(): Promise<number> {
+    const rows = await this.prisma.cdbApplication.findMany({
+      where: {
+        financialEntityId: { not: null },
+        OR: [{ monthlyAporteAmount: { gt: 0 } }, { recurrenceEnabled: true }],
+      },
+      select: { id: true },
+    });
+    for (const r of rows) {
+      await this.syncRevenuesForCdbApplication(r.id);
+      await this.syncAporteExpensesForCdbApplication(r.id);
+    }
+    return rows.length;
   }
 
   private async removePrevistoCdbLinkedRevenues(cdbApplicationId: string) {

@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { CdbApplicationService } from './cdb-application/cdb-application.service';
 import { FinancingService } from './financing/financing.service';
 import { PrismaService } from './prisma/prisma.service';
 
@@ -14,6 +15,7 @@ export class LexBootstrapDiagnosticsService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly financing: FinancingService,
+    private readonly cdbApplications: CdbApplicationService,
   ) {}
 
   async onModuleInit() {
@@ -47,6 +49,24 @@ export class LexBootstrapDiagnosticsService implements OnModuleInit {
       }
     } catch (e) {
       this.logger.warn(`Backfill despesas de financiamento: ${String(e)}`);
+    }
+
+    try {
+      const cdbNeedingSync = await this.prisma.cdbApplication.count({
+        where: {
+          financialEntityId: { not: null },
+          OR: [{ monthlyAporteAmount: { gt: 0 } }, { recurrenceEnabled: true }],
+        },
+      });
+      if (cdbNeedingSync > 0) {
+        this.logger.log(
+          `CDB: a sincronizar receitas e aportes para ${cdbNeedingSync} aplicação(ões) (entidade e recorrência ou aporte > 0).`,
+        );
+        const n = await this.cdbApplications.syncAllWithFinancialEntity();
+        this.logger.log(`CDB materializados: ${n}.`);
+      }
+    } catch (e) {
+      this.logger.warn(`Backfill CDB (receitas/aportes): ${String(e)}`);
     }
   }
 }
