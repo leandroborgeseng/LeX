@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '@/lib/api';
 import { brl, dateInputFromIso } from '@/lib/format';
 import { apiErrorMessage } from '@/lib/api-error';
@@ -21,6 +22,75 @@ import {
 } from 'recharts';
 
 type Entity = { id: string; name: string; type: string };
+function aporteMensalNum(r: AppRow): number {
+  return parseFloat(String(r.monthlyAporteAmount ?? 0)) || 0;
+}
+
+function CdbFluxoCaixaBadges({ r }: { r: AppRow }) {
+  const aporte = aporteMensalNum(r);
+  const temEntidade = !!r.financialEntityId?.trim();
+  const receitasDre = r.recurrenceEnabled && temEntidade;
+
+  if (!r.active) {
+    return (
+      <span className="inline-flex rounded-md border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-muted-foreground">
+        Inativo
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {!temEntidade ? (
+        <span
+          className="inline-flex rounded-md border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-950 dark:text-amber-100"
+          title="Defina a entidade para a aplicação entrar na liquidez e na DRE automática."
+        >
+          Sem entidade
+        </span>
+      ) : (
+        <span
+          className="inline-flex rounded-md border border-emerald-600/35 bg-emerald-600/10 px-2 py-0.5 text-[11px] font-medium text-emerald-950 dark:text-emerald-100"
+          title="Entidade definida: movimentos podem ser gerados na app."
+        >
+          Entidade OK
+        </span>
+      )}
+      {temEntidade &&
+        (aporte > 0 ? (
+          <span
+            className="inline-flex rounded-md border border-sky-600/35 bg-sky-600/10 px-2 py-0.5 text-[11px] font-medium text-sky-950 dark:text-sky-100"
+            title="Despesa PREVISTO de aporte mensal na liquidez (Desp. CDB)."
+          >
+            Aporte {brl(aporte)}/mês
+          </span>
+        ) : (
+          <span
+            className="inline-flex rounded-md border border-orange-500/40 bg-orange-500/10 px-2 py-0.5 text-[11px] font-medium text-orange-950 dark:text-orange-100"
+            title="Sem valor de aporte mensal: a liquidez não inclui saída recorrente para este CDB."
+          >
+            Sem aporte mensal
+          </span>
+        ))}
+      {receitasDre ? (
+        <span
+          className="inline-flex rounded-md border border-violet-500/35 bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium text-violet-950 dark:text-violet-100"
+          title="Receitas PREVISTO (rendimento estimado) na DRE / liquidez."
+        >
+          Receitas DRE
+        </span>
+      ) : temEntidade ? (
+        <span
+          className="inline-flex rounded-md border border-border px-2 py-0.5 text-[11px] text-muted-foreground"
+          title="Recorrência desligada: sem receitas automáticas por mês."
+        >
+          Sem receitas auto.
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 type AppRow = {
   id: string;
   name: string;
@@ -98,6 +168,26 @@ export default function Cdb() {
     setRows(a.data);
     setFormEntity((prev) => prev || (e.data[0]?.id ?? ''));
   }, []);
+
+  const resumoFluxo = useMemo(() => {
+    let ativos = 0;
+    let comAporte = 0;
+    let semAporteComEntidade = 0;
+    let semEntidade = 0;
+    let comReceitasDre = 0;
+    for (const r of rows) {
+      if (!r.active) continue;
+      ativos++;
+      if (!r.financialEntityId?.trim()) {
+        semEntidade++;
+        continue;
+      }
+      if (aporteMensalNum(r) > 0) comAporte++;
+      else semAporteComEntidade++;
+      if (r.recurrenceEnabled) comReceitasDre++;
+    }
+    return { ativos, comAporte, semAporteComEntidade, semEntidade, comReceitasDre };
+  }, [rows]);
 
   const fetchProjection = useCallback(async () => {
     const q = entityId ? `?years=5&financialEntityId=${encodeURIComponent(entityId)}` : '?years=5';
@@ -584,6 +674,21 @@ export default function Cdb() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Aplicações cadastradas</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Use a coluna <strong className="text-foreground">Fluxo de caixa</strong> para ver o que já entra na liquidez
+            mensal e na DRE. Resumo (apenas ativos):{' '}
+            <span className="whitespace-nowrap">{resumoFluxo.comAporte} com aporte</span>
+            {' · '}
+            <span className="whitespace-nowrap">{resumoFluxo.semAporteComEntidade} sem aporte (entidade OK)</span>
+            {' · '}
+            <span className="whitespace-nowrap">{resumoFluxo.semEntidade} sem entidade</span>
+            {' · '}
+            <span className="whitespace-nowrap">{resumoFluxo.comReceitasDre} com receitas DRE</span>
+            {resumoFluxo.ativos === 0 && ' — nenhuma aplicação ativa.'}{' '}
+            <Link to="/liquidez-mensal" className="font-medium text-primary underline-offset-4 hover:underline">
+              Ver liquidez mensal
+            </Link>
+          </p>
         </CardHeader>
         <CardContent>
           <div className="hidden md:block">
@@ -593,6 +698,7 @@ export default function Cdb() {
                   <TH>Nome</TH>
                   <TH>Banco</TH>
                   <TH>Entidade</TH>
+                  <TH className="min-w-[200px]">Fluxo de caixa</TH>
                   <TH className="text-right">Principal</TH>
                   <TH>% CDI</TH>
                   <TH>CDI a.a.</TH>
@@ -609,6 +715,9 @@ export default function Cdb() {
                     <TD>{r.name}</TD>
                     <TD>{r.institution ?? '—'}</TD>
                     <TD>{r.financialEntity?.name ?? '—'}</TD>
+                    <TD className="align-top">
+                      <CdbFluxoCaixaBadges r={r} />
+                    </TD>
                     <TD className="text-right">{brl(parseFloat(r.principal))}</TD>
                     <TD>{r.indexerPercentOfCdi}%</TD>
                     <TD>{r.assumedCdiAnnualPercent}%</TD>
@@ -616,9 +725,7 @@ export default function Cdb() {
                     <TD>{r.active ? 'Sim' : 'Não'}</TD>
                     <TD>{r.recurrenceEnabled && r.financialEntityId ? 'Sim' : '—'}</TD>
                     <TD className="text-right">
-                      {parseFloat(String(r.monthlyAporteAmount ?? 0)) > 0
-                        ? brl(parseFloat(String(r.monthlyAporteAmount)))
-                        : '—'}
+                      {aporteMensalNum(r) > 0 ? brl(aporteMensalNum(r)) : '—'}
                     </TD>
                     <TD>
                       <Button type="button" variant="outline" size="sm" onClick={() => openCdbEdit(r)}>
@@ -638,9 +745,9 @@ export default function Cdb() {
                   {r.institution ?? '—'} · {r.indexerPercentOfCdi}% CDI · CDI {r.assumedCdiAnnualPercent}% a.a.
                 </p>
                 <p className="mt-1">{brl(parseFloat(r.principal))}</p>
-                {r.recurrenceEnabled && r.financialEntityId && (
-                  <p className="text-xs text-muted-foreground">Receitas na DRE: sim</p>
-                )}
+                <div className="mt-2">
+                  <CdbFluxoCaixaBadges r={r} />
+                </div>
                 <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => openCdbEdit(r)}>
                   Editar
                 </Button>
