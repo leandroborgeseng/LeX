@@ -384,6 +384,7 @@ export default function Financiamentos() {
   const [eInsurance, setEInsurance] = useState('0');
   const [saving, setSaving] = useState(false);
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [flowHint, setFlowHint] = useState<string | null>(null);
 
   async function load() {
     const [e, f] = await Promise.all([api.get<Entity[]>('/financial-entities'), api.get<Fin[]>('/financings')]);
@@ -426,10 +427,18 @@ export default function Financiamentos() {
     await load();
   }
 
-  async function syncExpenses(id: string) {
-    setSyncingId(id);
+  async function syncExpenses(f: Fin) {
+    if (!f.financialEntityId?.trim()) {
+      setFlowHint(
+        'Este contrato ainda não tem entidade PF/PJ. Escolha a entidade em Editar, guarde e as despesas das parcelas poderão ser geradas aqui (liquidez e gráficos).',
+      );
+      openEdit(f);
+      return;
+    }
+    setFlowHint(null);
+    setSyncingId(f.id);
     try {
-      await api.post(`/financings/${id}/sync-expenses`);
+      await api.post(`/financings/${f.id}/sync-expenses`);
       await load();
     } finally {
       setSyncingId(null);
@@ -445,17 +454,33 @@ export default function Financiamentos() {
     ev.preventDefault();
     if (!editing) return;
     setSaving(true);
+    const id = editing.id;
+    const tinhaEntidade = !!editing.financialEntityId?.trim();
+    const novaEntidade = eEntityId.trim();
     try {
-      await api.patch(`/financings/${editing.id}`, {
+      await api.patch(`/financings/${id}`, {
         name: eName,
         kind: eKind,
         creditor: eCreditor.trim() ? eCreditor : null,
-        financialEntityId: eEntityId || null,
+        financialEntityId: novaEntidade || null,
         insuranceTotalPremium: parseFloat(eInsurance.replace(',', '.')) || 0,
       });
       setEditOpen(false);
       setEditing(null);
       await load();
+      if (!tinhaEntidade && novaEntidade) {
+        setFlowHint('Entidade guardada. A sincronizar despesas das parcelas…');
+        setSyncingId(id);
+        try {
+          await api.post(`/financings/${id}/sync-expenses`);
+          await load();
+          setFlowHint('Despesas sincronizadas. Já devem aparecer em Movimentos, liquidez e resultados mensais.');
+        } catch {
+          setFlowHint('Entidade guardada, mas a sincronização falhou. Use «Sincronizar despesas» no contrato.');
+        } finally {
+          setSyncingId(null);
+        }
+      }
     } finally {
       setSaving(false);
     }
@@ -484,13 +509,13 @@ export default function Financiamentos() {
                 </select>
               </div>
               <div className="space-y-2">
-                <Label>Entidade (opcional)</Label>
+                <Label>Entidade PF/PJ (para despesas e gráficos)</Label>
                 <select
                   className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm"
                   value={eEntityId}
                   onChange={(e) => setEEntityId(e.target.value)}
                 >
-                  <option value="">—</option>
+                  <option value="">— Sem entidade (sem despesas automáticas)</option>
                   {entities.map((x) => (
                     <option key={x.id} value={x.id}>
                       {x.name}
@@ -536,8 +561,22 @@ export default function Financiamentos() {
         <h1 className="text-2xl font-semibold">Financiamentos e empréstimos</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Registe cada contrato como <strong>financiamento</strong> ou <strong>empréstimo</strong>, acompanhe parcelas
-          e use as ferramentas de antecipação e quitação ao expandir um contrato.
+          e use as ferramentas de antecipação e quitação ao expandir um contrato. Contratos <strong>antigos sem
+          entidade</strong>: use <strong>Sincronizar despesas</strong> (o botão abre o editor para escolher PF/PJ) —
+          sem entidade as parcelas não viram despesas na liquidez nem nos resultados mensais.
         </p>
+        {flowHint && (
+          <p className="mt-3 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-foreground">
+            {flowHint}{' '}
+            <button
+              type="button"
+              className="text-xs font-medium text-primary underline"
+              onClick={() => setFlowHint(null)}
+            >
+              Fechar
+            </button>
+          </p>
+        )}
       </div>
 
       <SeguroPrestamistaInfo />
@@ -653,7 +692,14 @@ export default function Financiamentos() {
                       {kindLabel(fk)}
                     </span>
                     <div>
-                      <p className="font-medium">{f.name}</p>
+                      <p className="font-medium">
+                        {f.name}
+                        {!f.financialEntityId ? (
+                          <span className="ml-2 inline-flex rounded-md border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-950 dark:text-amber-100">
+                            Sem entidade
+                          </span>
+                        ) : null}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         {f.creditor ?? '—'} · Saldo: {brl(parseFloat(f.currentBalance))}
                       </p>
@@ -673,17 +719,20 @@ export default function Financiamentos() {
                     <Button type="button" variant="secondary" size="sm" onClick={() => openEdit(f)}>
                       Editar
                     </Button>
-                    {f.financialEntityId ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={syncingId === f.id}
-                        onClick={() => void syncExpenses(f.id)}
-                      >
-                        {syncingId === f.id ? 'Sincronizando…' : 'Sincronizar despesas'}
-                      </Button>
-                    ) : null}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={syncingId === f.id}
+                      title={
+                        f.financialEntityId
+                          ? 'Cria ou atualiza despesas PREVISTO das parcelas em aberto (liquidez e resultados mensais).'
+                          : 'Abre o editor para escolher a entidade; depois sincroniza as despesas.'
+                      }
+                      onClick={() => void syncExpenses(f)}
+                    >
+                      {syncingId === f.id ? 'Sincronizando…' : 'Sincronizar despesas'}
+                    </Button>
                     <Button
                       type="button"
                       variant="outline"
