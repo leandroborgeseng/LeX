@@ -1,6 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   CategoryKind,
+  ExpenseStatus,
+  ExpenseType,
+  PaymentMethod,
   RevenueStatus,
   RevenueType,
 } from '@prisma/client';
@@ -9,6 +12,8 @@ import { CreateCdbApplicationDto, UpdateCdbApplicationDto } from './dto/cdb-appl
 import { monthlyCdbAccrualSchedule, projectCdbPortfolio } from './cdb-math.util';
 
 const CDB_REVENUE_CATEGORY = 'Rendimentos CDB';
+const CDB_APORTE_CATEGORY = 'Aportes CDB';
+const CDB_APORTE_NOTES = 'Lançamento automático (CDB aporte mensal).';
 
 @Injectable()
 export class CdbApplicationService {
@@ -42,6 +47,106 @@ export class CdbApplicationService {
       create: { name: CDB_REVENUE_CATEGORY, kind: CategoryKind.REVENUE },
     });
     return c.id;
+  }
+
+  private async resolveCdbAporteCategoryId(): Promise<string> {
+    const c = await this.prisma.category.upsert({
+      where: {
+        name_kind: { name: CDB_APORTE_CATEGORY, kind: CategoryKind.EXPENSE },
+      },
+      update: {},
+      create: { name: CDB_APORTE_CATEGORY, kind: CategoryKind.EXPENSE },
+    });
+    return c.id;
+  }
+
+  private async removePrevistoCdbLinkedAporteExpenses(cdbApplicationId: string) {
+    await this.prisma.expense.deleteMany({
+      where: {
+        cdbApplicationId,
+        cdbAporteYear: { not: null },
+        status: ExpenseStatus.PREVISTO,
+      },
+    });
+  }
+
+  /**
+   * Despesas PREVISTO de aporte mensal (mesmo calendário das receitas de acréscimo), quando `monthlyAporteAmount` > 0.
+   */
+  async syncAporteExpensesForCdbApplication(id: string) {
+    const row = await this.findOne(id);
+    const aporte = Number(row.monthlyAporteAmount ?? 0);
+    if (!row.recurrenceEnabled || !row.active || !row.financialEntityId || aporte <= 0) {
+      await this.removePrevistoCdbLinkedAporteExpenses(id);
+      return this.findOne(id);
+    }
+
+    const horizon = Math.min(
+      120,
+      Math.max(1, Math.round(Number(row.revenueSyncHorizonMonths) || 36)),
+    );
+    const schedule = monthlyCdbAccrualSchedule(
+      {
+        principal: Number(row.principal),
+        applicationDate: row.applicationDate,
+        maturityDate: row.maturityDate,
+        indexerPercentOfCdi: Number(row.indexerPercentOfCdi),
+        assumedCdiAnnualPercent: Number(row.assumedCdiAnnualPercent),
+      },
+      horizon,
+      row.recurrenceEndDate,
+    );
+
+    const categoryId = await this.resolveCdbAporteCategoryId();
+    await this.removePrevistoCdbLinkedAporteExpenses(id);
+
+    for (const m of schedule) {
+      const existing = await this.prisma.expense.findFirst({
+        where: {
+          cdbApplicationId: id,
+          cdbAporteYear: m.accrualYear,
+          cdbAporteMonth: m.accrualMonth,
+        },
+      });
+      if (existing?.status === ExpenseStatus.PAGO) continue;
+
+      const label = `${m.accrualYear}-${String(m.accrualMonth).padStart(2, '0')}`;
+      const description = `CDB: ${row.name} · ${label} (aporte mensal)`;
+
+      if (existing) {
+        await this.prisma.expense.update({
+          where: { id: existing.id },
+          data: {
+            amount: aporte,
+            competenceDate: m.competenceDate,
+            dueDate: m.dueDate,
+            description,
+            categoryId,
+          },
+        });
+        continue;
+      }
+
+      await this.prisma.expense.create({
+        data: {
+          financialEntityId: row.financialEntityId,
+          description,
+          type: ExpenseType.ESPORADICA,
+          categoryId,
+          amount: aporte,
+          competenceDate: m.competenceDate,
+          dueDate: m.dueDate,
+          status: ExpenseStatus.PREVISTO,
+          paymentMethod: PaymentMethod.TRANSFERENCIA,
+          cdbApplicationId: id,
+          cdbAporteYear: m.accrualYear,
+          cdbAporteMonth: m.accrualMonth,
+          notes: CDB_APORTE_NOTES,
+        },
+      });
+    }
+
+    return this.findOne(id);
   }
 
   private async removePrevistoCdbLinkedRevenues(cdbApplicationId: string) {
@@ -131,6 +236,7 @@ export class CdbApplicationService {
     } else {
       await this.removePrevistoCdbLinkedRevenues(id);
     }
+    await this.syncAporteExpensesForCdbApplication(id);
     return this.findOne(id);
   }
 
@@ -138,6 +244,12 @@ export class CdbApplicationService {
     if ((dto.recurrenceEnabled ?? false) && !dto.financialEntityId?.trim()) {
       throw new BadRequestException(
         'Para lançar receitas recorrentes na DRE, informe a entidade financeira da aplicação.',
+      );
+    }
+    const aporte = dto.monthlyAporteAmount ?? 0;
+    if (aporte > 0 && !dto.financialEntityId?.trim()) {
+      throw new BadRequestException(
+        'Para lançar aportes mensais como despesa, informe a entidade financeira da aplicação.',
       );
     }
     return this.prisma.cdbApplication
@@ -156,6 +268,7 @@ export class CdbApplicationService {
           recurrenceEnabled: dto.recurrenceEnabled ?? false,
           recurrenceEndDate: dto.recurrenceEndDate ? new Date(dto.recurrenceEndDate) : null,
           revenueSyncHorizonMonths: dto.revenueSyncHorizonMonths ?? 36,
+          monthlyAporteAmount: aporte,
         },
         include: { financialEntity: { select: { id: true, name: true, type: true } } },
       })
@@ -181,6 +294,15 @@ export class CdbApplicationService {
       if (!cur?.financialEntityId) {
         throw new BadRequestException(
           'Para lançar receitas recorrentes na DRE, informe a entidade financeira da aplicação.',
+        );
+      }
+    }
+    if (dto.monthlyAporteAmount !== undefined && dto.monthlyAporteAmount > 0) {
+      const effEntity =
+        financialEntityId !== undefined ? financialEntityId : (await this.findOne(id)).financialEntityId;
+      if (!effEntity) {
+        throw new BadRequestException(
+          'Para lançar aportes mensais como despesa, informe a entidade financeira da aplicação.',
         );
       }
     }
@@ -217,6 +339,9 @@ export class CdbApplicationService {
                 Math.max(1, Math.round(dto.revenueSyncHorizonMonths)),
               ),
             }
+          : {}),
+        ...(dto.monthlyAporteAmount !== undefined
+          ? { monthlyAporteAmount: Math.max(0, dto.monthlyAporteAmount) }
           : {}),
       },
       include: { financialEntity: { select: { id: true, name: true, type: true } } },

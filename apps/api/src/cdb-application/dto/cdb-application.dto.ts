@@ -72,6 +72,13 @@ export class CreateCdbApplicationDto {
   @Min(1)
   @Max(120)
   revenueSyncHorizonMonths?: number;
+
+  /** Valor mensal de aporte (despesa PREVISTO); 0 = não gera despesas automáticas. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  monthlyAporteAmount?: number;
 }
 
 export class UpdateCdbApplicationDto {
@@ -139,4 +146,10 @@ export class UpdateCdbApplicationDto {
   @Min(1)
   @Max(120)
   revenueSyncHorizonMonths?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  monthlyAporteAmount?: number;
 }

@@ -167,6 +167,7 @@ export class ReportsService {
 
     for (const c of cdbs) {
       await this.cdbApplications.syncRevenuesForCdbApplication(c.id);
+      await this.cdbApplications.syncAporteExpensesForCdbApplication(c.id);
     }
     for (const f of fins) {
       await this.financings.syncExpensesForFinancing(f.id);
@@ -206,11 +207,13 @@ export class ReportsService {
 
   private liquidityExpenseBucket(e: {
     financingInstallmentId: string | null;
+    cdbApplicationId: string | null;
     description: string | null;
     notes: string | null;
     category: { name: string } | null;
   }): 'financing' | 'cdb' | 'other' {
     if (e.financingInstallmentId) return 'financing';
+    if (e.cdbApplicationId) return 'cdb';
     if (this.isCdbExpenseText(e.description, e.category?.name ?? null, e.notes)) return 'cdb';
     return 'other';
   }
@@ -251,6 +254,7 @@ export class ReportsService {
           competenceDate: true,
           amount: true,
           financingInstallmentId: true,
+          cdbApplicationId: true,
           description: true,
           notes: true,
           category: { select: { name: true } },

@@ -405,8 +405,9 @@ export default function LiquidezMensal() {
         <h1 className="text-2xl font-semibold">Sobra livre no mês</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Receitas e despesas na mesma base da DRE (competência). Inclui parcelas de{' '}
-          <strong>financiamento/empréstimo</strong> geradas pela app, rendimentos CDB materializados como receitas e
-          despesas com referência a CDB (texto). Clique nos valores da tabela para ver e editar os lançamentos.
+          <strong>financiamento/empréstimo</strong> geradas pela app, rendimentos CDB como receitas e aportes mensais
+          configurados no cadastro CDB como despesas automáticas (categoria Aportes CDB), além de despesas com
+          &quot;cdb&quot; no texto. Clique nos valores da tabela para ver e editar os lançamentos.
           Cadastro CDB:{' '}
           <Link to="/cdb" className="font-medium text-primary underline-offset-4 hover:underline">
             CDB / CDI
@@ -460,8 +461,8 @@ export default function LiquidezMensal() {
             {syncing ? 'A atualizar…' : 'Atualizar CDB e contratos'}
           </Button>
           <p className="text-xs text-muted-foreground">
-            Gera de novo as receitas estimadas do CDB (com recorrência ativa) e as despesas das parcelas dos
-            financiamentos, para o mesmo filtro de entidade desta página.
+            Gera de novo as receitas estimadas do CDB, as despesas de aporte mensal (se configuradas) e as despesas das
+            parcelas dos financiamentos, para o mesmo filtro de entidade desta página.
           </p>
         </div>
       </div>

@@ -36,6 +36,7 @@ type AppRow = {
   recurrenceEnabled: boolean;
   recurrenceEndDate: string | null;
   revenueSyncHorizonMonths: number;
+  monthlyAporteAmount?: string | number;
   financialEntity: { name: string } | null;
 };
 
@@ -68,6 +69,7 @@ export default function Cdb() {
   const [recurrenceEnabled, setRecurrenceEnabled] = useState(false);
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
   const [revenueSyncHorizonMonths, setRevenueSyncHorizonMonths] = useState('36');
+  const [monthlyAporte, setMonthlyAporte] = useState('0');
 
   const [projTick, setProjTick] = useState(0);
 
@@ -86,6 +88,7 @@ export default function Cdb() {
   const [eRecurrence, setERecurrence] = useState(false);
   const [eRecEnd, setERecEnd] = useState('');
   const [eHorizon, setEHorizon] = useState('36');
+  const [eMonthlyAporte, setEMonthlyAporte] = useState('0');
   const [cdbSaving, setCdbSaving] = useState(false);
   const [syncBusyId, setSyncBusyId] = useState<string | null>(null);
 
@@ -129,6 +132,7 @@ export default function Cdb() {
     setERecurrence(editing.recurrenceEnabled ?? false);
     setERecEnd(editing.recurrenceEndDate ? dateInputFromIso(editing.recurrenceEndDate) : '');
     setEHorizon(String(editing.revenueSyncHorizonMonths ?? 36));
+    setEMonthlyAporte(String(parseFloat(String(editing.monthlyAporteAmount ?? 0)) || 0));
   }, [editing, editOpen]);
 
   function openCdbEdit(r: AppRow) {
@@ -156,6 +160,7 @@ export default function Cdb() {
         recurrenceEnabled: eRecurrence,
         recurrenceEndDate: eRecEnd ? new Date(eRecEnd).toISOString() : null,
         revenueSyncHorizonMonths: Math.min(120, Math.max(1, parseInt(eHorizon, 10) || 36)),
+        monthlyAporteAmount: Math.max(0, parseFloat(eMonthlyAporte.replace(',', '.')) || 0),
       });
       setEditOpen(false);
       setEditing(null);
@@ -196,6 +201,7 @@ export default function Cdb() {
           120,
           Math.max(1, parseInt(revenueSyncHorizonMonths, 10) || 36),
         ),
+        monthlyAporteAmount: Math.max(0, parseFloat(monthlyAporte.replace(',', '.')) || 0),
       });
       setName('');
       setInstitution('');
@@ -314,6 +320,22 @@ export default function Cdb() {
                       disabled={!eRecurrence}
                     />
                   </div>
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label className="text-xs">Aporte mensal (R$) — liquidez / despesas CDB</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={eMonthlyAporte}
+                      onChange={(e) => setEMonthlyAporte(e.target.value)}
+                      disabled={!eRecurrence}
+                      placeholder="0 = não gera despesa automática"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Mesmo calendário das receitas DRE; exige entidade. Use &quot;Sincronizar receitas DRE&quot; ou
+                      salve para materializar.
+                    </p>
+                  </div>
                 </div>
               </div>
               <div className="flex flex-wrap justify-end gap-2">
@@ -358,7 +380,9 @@ export default function Cdb() {
           <strong>CDI anual assumido</strong> por aplicação, capitalização equivalente a 365 dias, e o{' '}
           <strong>IR regressivo</strong> sobre o ganho (22,5% até 180 dias; 20% até 360; 17,5% até 720; 15% acima). Com{' '}
           <strong>recorrência na DRE</strong>, o sistema gera receitas <strong>PREVISTO</strong> mês a mês (acréscimo
-          patrimonial líquido estimado) na categoria Rendimentos CDB, alinhadas à mesma metodologia da projeção.
+          patrimonial líquido estimado) na categoria Rendimentos CDB, alinhadas à mesma metodologia da projeção. Com{' '}
+          <strong>aporte mensal</strong> (valor opcional), gera também despesas <strong>PREVISTO</strong> na categoria
+          Aportes CDB — aparecem na liquidez mensal em “Desp. CDB”.
         </p>
       </div>
 
@@ -453,6 +477,18 @@ export default function Cdb() {
                     value={revenueSyncHorizonMonths}
                     onChange={(e) => setRevenueSyncHorizonMonths(e.target.value)}
                     disabled={!recurrenceEnabled}
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs">Aporte mensal (R$) — liquidez / despesas CDB</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={monthlyAporte}
+                    onChange={(e) => setMonthlyAporte(e.target.value)}
+                    disabled={!recurrenceEnabled}
+                    placeholder="0 = não gera despesa automática"
                   />
                 </div>
               </div>
@@ -562,6 +598,7 @@ export default function Cdb() {
                   <TH>Aplicação</TH>
                   <TH>Ativo</TH>
                   <TH>DRE</TH>
+                  <TH className="text-right">Aporte/mês</TH>
                   <TH className="w-[88px]"> </TH>
                 </TR>
               </THead>
@@ -577,6 +614,11 @@ export default function Cdb() {
                     <TD>{r.applicationDate.slice(0, 10)}</TD>
                     <TD>{r.active ? 'Sim' : 'Não'}</TD>
                     <TD>{r.recurrenceEnabled && r.financialEntityId ? 'Sim' : '—'}</TD>
+                    <TD className="text-right">
+                      {parseFloat(String(r.monthlyAporteAmount ?? 0)) > 0
+                        ? brl(parseFloat(String(r.monthlyAporteAmount)))
+                        : '—'}
+                    </TD>
                     <TD>
                       <Button type="button" variant="outline" size="sm" onClick={() => openCdbEdit(r)}>
                         Editar

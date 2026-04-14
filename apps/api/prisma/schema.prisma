@@ -160,10 +160,13 @@ model CdbApplication {
   recurrenceEndDate         DateTime?
   /// Quantos meses à frente materializar lançamentos de receita (1–120).
   revenueSyncHorizonMonths  Int               @default(36)
+  /// Valor mensal de aporte (saída de caixa) materializado como despesa PREVISTO; 0 = não gera despesas automáticas.
+  monthlyAporteAmount       Decimal           @default(0)
   createdAt                 DateTime          @default(now())
   updatedAt                 DateTime          @updatedAt
 
-  linkedRevenues Revenue[]
+  linkedRevenues     Revenue[]
+  linkedAporteExpenses Expense[]
 }
 
 model HouseholdMember {
@@ -421,4 +424,11 @@ model Expense {
   recurringParent     Expense?        @relation("RecurringExpense", fields: [recurringParentId], references: [id], onDelete: Cascade)
   recurringChildren   Expense[]       @relation("RecurringExpense")
   createdAt           DateTime        @default(now())
+
+  cdbApplicationId String?
+  cdbAporteYear    Int?
+  cdbAporteMonth   Int?
+  cdbApplication   CdbApplication? @relation(fields: [cdbApplicationId], references: [id], onDelete: Cascade)
+
+  @@unique([cdbApplicationId, cdbAporteYear, cdbAporteMonth])
 }

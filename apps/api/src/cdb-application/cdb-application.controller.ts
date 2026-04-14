@@ -38,6 +38,8 @@ export class CdbApplicationController {
 
   @Post(':id/sync-revenues')
   syncRevenues(@Param('id') id: string) {
-    return this.svc.syncRevenuesForCdbApplication(id);
+    return this.svc
+      .syncRevenuesForCdbApplication(id)
+      .then(() => this.svc.syncAporteExpensesForCdbApplication(id));
   }
 }
