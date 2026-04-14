@@ -499,25 +499,48 @@ export class ReportsService {
     return Array.from(map.entries()).map(([source, total]) => ({ source, total }));
   }
 
-  async debtEvolution(months: number) {
+  /**
+   * Saldo devedor principal no fim de cada mês: por contrato, valor original menos amortizações de parcelas
+   * já quitadas com data de quitação (paidAt ou, em fallback, vencimento) até o fim do mês; contratos com
+   * início após o mês entram com 0. Respeita o mesmo escopo PF/PJ/consolidado dos outros relatórios.
+   */
+  async debtEvolution(scope: EntityScope, months: number) {
+    const n = Math.min(60, Math.max(1, Number.isFinite(months) ? months : 12));
+    const ids = await this.entityIds(scope);
+    const finWhere = ids === undefined ? {} : { financialEntityId: { in: ids } };
+
+    const financings = await this.prisma.financing.findMany({
+      where: finWhere,
+      select: {
+        startDate: true,
+        originalValue: true,
+        installments: {
+          select: { status: true, dueDate: true, paidAt: true, amortization: true },
+        },
+      },
+    });
+
     const now = new Date();
     const rows: { year: number; month: number; outstanding: number }[] = [];
-    for (let i = 0; i < months; i++) {
+    for (let i = 0; i < n; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const end = endOfMonth(d);
-      const paidAgg = await this.prisma.financingInstallment.aggregate({
-        where: { status: ExpenseStatus.PAGO, paidAt: { lte: end } },
-        _sum: { amortization: true },
-      });
-      const totalOriginal = await this.prisma.financing.aggregate({
-        _sum: { originalValue: true },
-      });
-      const orig = Number(totalOriginal._sum.originalValue ?? 0);
-      const amort = Number(paidAgg._sum.amortization ?? 0);
+      let outstanding = 0;
+      for (const f of financings) {
+        if (new Date(f.startDate) > end) continue;
+        const orig = Number(f.originalValue ?? 0);
+        let amort = 0;
+        for (const ins of f.installments) {
+          if (ins.status !== ExpenseStatus.PAGO) continue;
+          const paid = ins.paidAt ? new Date(ins.paidAt) : new Date(ins.dueDate);
+          if (paid.getTime() <= end.getTime()) amort += Number(ins.amortization ?? 0);
+        }
+        outstanding += Math.max(0, orig - amort);
+      }
       rows.push({
         year: d.getFullYear(),
         month: d.getMonth() + 1,
-        outstanding: Math.max(0, orig - amort),
+        outstanding: Math.round(outstanding * 100) / 100,
       });
     }
     return rows.reverse();

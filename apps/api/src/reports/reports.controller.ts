@@ -158,8 +158,12 @@ export class ReportsController {
   }
 
   @Get('debt-evolution')
-  debt(@Query('months') months = '12') {
-    return this.svc.debtEvolution(parseInt(months, 10));
+  debt(
+    @Query('scope') scope: EntityScope = 'CONSOLIDADO',
+    @Query('months') months = '12',
+  ) {
+    const m = parseInt(months, 10);
+    return this.svc.debtEvolution(scope, Number.isFinite(m) ? m : 12);
   }
 
   @Get('contracts-margin')

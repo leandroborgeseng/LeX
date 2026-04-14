@@ -136,8 +136,10 @@ export default function Relatorios() {
   }, [scope, year, cfMonth]);
 
   useEffect(() => {
-    api.get<DebtPoint[]>(`/reports/debt-evolution?months=${debtMonths}`).then((r) => setDebtSeries(r.data));
-  }, [debtMonths]);
+    api
+      .get<DebtPoint[]>(`/reports/debt-evolution?scope=${scope}&months=${debtMonths}`)
+      .then((r) => setDebtSeries(Array.isArray(r.data) ? r.data : []));
+  }, [debtMonths, scope]);
 
   useEffect(() => {
     api.get<ContractMarginRow[]>(`/reports/contracts-margin`).then((r) => setContractsMargin(r.data));
