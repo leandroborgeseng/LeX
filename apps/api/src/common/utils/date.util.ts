@@ -33,3 +33,16 @@ export function competenceUtcYearMonth1(d: Date | string): { year: number; month
   if (!Number.isFinite(year) || !Number.isFinite(month1) || month1 < 1 || month1 > 12) return null;
   return { year, month1 };
 }
+
+/**
+ * Ano e mês civis usando o fuso local do processo (`getFullYear` / `getMonth`).
+ * Alinha o agrupamento da liquidez mensal aos intervalos `new Date(ano, mês-1, 1)` usados nas queries.
+ */
+export function competenceLocalYearMonth1(d: Date | string): { year: number; month1: number } | null {
+  const dt = typeof d === 'string' ? new Date(d) : new Date(d.getTime());
+  if (Number.isNaN(dt.getTime())) return null;
+  const year = dt.getFullYear();
+  const month1 = dt.getMonth() + 1;
+  if (month1 < 1 || month1 > 12) return null;
+  return { year, month1 };
+}

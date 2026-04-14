@@ -9,7 +9,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { EMPTY_SCOPE_ENTITY_ID } from '../common/entity-filter';
-import { competenceUtcYearMonth1, endOfMonth, startOfMonth } from '../common/utils/date.util';
+import { competenceLocalYearMonth1, endOfMonth, startOfMonth } from '../common/utils/date.util';
 
 export type EntityScope = 'PF' | 'PJ' | 'CONSOLIDADO';
 
@@ -205,6 +205,18 @@ export class ReportsService {
     return s.includes('cdb');
   }
 
+  /** Despesas antigas sem `financingInstallmentId` mas com texto gerado pela app (parcela do contrato). */
+  private isLikelyFinancingContractDescription(description: string | null): boolean {
+    const d = (description ?? '').trim();
+    if (!d) return false;
+    const lower = d.toLowerCase();
+    if (lower.includes('cdb')) return false;
+    return (
+      (d.includes('Financiamento:') || d.includes('Empréstimo:')) &&
+      d.includes('Parcela ')
+    );
+  }
+
   private liquidityExpenseBucket(e: {
     financingInstallmentId: string | null;
     cdbApplicationId: string | null;
@@ -213,6 +225,7 @@ export class ReportsService {
     category: { name: string } | null;
   }): 'financing' | 'cdb' | 'other' {
     if (e.financingInstallmentId) return 'financing';
+    if (this.isLikelyFinancingContractDescription(e.description)) return 'financing';
     if (e.cdbApplicationId) return 'cdb';
     if (this.isCdbExpenseText(e.description, e.category?.name ?? null, e.notes)) return 'cdb';
     return 'other';
@@ -269,7 +282,7 @@ export class ReportsService {
     const cdbExpByMonth = Array.from({ length: 12 }, () => 0);
 
     for (const r of revenues) {
-      const ym = competenceUtcYearMonth1(r.competenceDate);
+      const ym = competenceLocalYearMonth1(r.competenceDate);
       if (!ym || ym.year !== year) continue;
       const mi = ym.month1 - 1;
       const net = Number(r.netAmount);
@@ -277,7 +290,7 @@ export class ReportsService {
       if (r.cdbApplicationId) revCdbByMonth[mi] += net;
     }
     for (const e of expenses) {
-      const ym = competenceUtcYearMonth1(e.competenceDate);
+      const ym = competenceLocalYearMonth1(e.competenceDate);
       if (!ym || ym.year !== year) continue;
       const mi = ym.month1 - 1;
       const amt = Number(e.amount);
@@ -351,7 +364,7 @@ export class ReportsService {
         sobraLivre: sumSobra,
       },
       nota:
-        'Receitas: PREVISTO + RECEBIDO + ATRASADO. Rendimento CDB na app: receitas com vínculo à aplicação CDB. Despesas: PREVISTO + PAGO + ATRASADO. Financiamento/empréstimo: despesas geradas pela app (parcela do contrato). Despesas CDB: demais despesas com “cdb” em descrição, categoria ou notas. Sobra livre = receitas − despesas. Competências agrupadas pelo calendário UTC (YYYY-MM-DD).',
+        'Receitas: PREVISTO + RECEBIDO + ATRASADO. Rendimento CDB na app: receitas com vínculo à aplicação CDB. Despesas: PREVISTO + PAGO + ATRASADO. Financiamento/empréstimo: despesas com vínculo à parcela do contrato ou texto “Financiamento:/Empréstimo:” com “Parcela”. Despesas CDB: demais despesas com “cdb” em descrição, categoria ou notas. Sobra livre = receitas − despesas. Competências agrupadas pelo calendário local (ano/mês).',
     };
   }
 

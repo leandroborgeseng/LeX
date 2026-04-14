@@ -56,8 +56,51 @@ export class FinancingService {
     });
   }
 
+  private startEndLocalDay(d: Date): { start: Date; end: Date } {
+    const x = new Date(d.getTime());
+    return {
+      start: new Date(x.getFullYear(), x.getMonth(), x.getDate(), 0, 0, 0, 0),
+      end: new Date(x.getFullYear(), x.getMonth(), x.getDate(), 23, 59, 59, 999),
+    };
+  }
+
   /**
-   * Cria ou atualiza despesas PREVISTO ligadas às parcelas PREVISTO do contrato (competência = vencimento da parcela).
+   * Liga despesa antiga (sem `financingInstallmentId`) à parcela quando valor, dia de competência e texto batem.
+   */
+  private async tryLinkOrphanExpenseToInstallment(
+    f: { name: string; financialEntityId: string },
+    inst: { id: string; number: number; dueDate: Date; payment: unknown },
+  ): Promise<boolean> {
+    const { start, end } = this.startEndLocalDay(new Date(inst.dueDate));
+    const n = inst.number;
+    const candidates = await this.prisma.expense.findMany({
+      where: {
+        financingInstallmentId: null,
+        financialEntityId: f.financialEntityId,
+        competenceDate: { gte: start, lte: end },
+        amount: inst.payment as never,
+        OR: [
+          { description: { contains: `Parcela ${n}/` } },
+          { description: { contains: `Parcela ${n} /` } },
+        ],
+      },
+    });
+    const name = f.name.trim();
+    const filtered = candidates.filter(
+      (e) =>
+        e.description.includes(name) &&
+        (e.description.includes('Financiamento:') || e.description.includes('Empréstimo:')),
+    );
+    if (filtered.length !== 1) return false;
+    await this.prisma.expense.update({
+      where: { id: filtered[0].id },
+      data: { financingInstallmentId: inst.id, mandatory: true } as never,
+    });
+    return true;
+  }
+
+  /**
+   * Cria, atualiza ou liga despesas às parcelas (PREVISTO, ATRASADO e PAGO sem linha).
    * Exige `financialEntityId` no financiamento; sem entidade, remove apenas despesas PREVISTO vinculadas.
    */
   async syncExpensesForFinancing(financingId: string) {
@@ -66,55 +109,115 @@ export class FinancingService {
       include: { installments: { orderBy: { number: 'asc' } } },
     });
     if (!f) return;
-    if (!f.financialEntityId) {
+    const entityId = f.financialEntityId;
+    if (!entityId) {
       await this.removePrevistoExpensesForFinancingInstallments(financingId);
       return;
     }
 
     const categoryId = await this.resolveFinancingExpenseCategoryId();
-    const kind = (f as { kind?: string }).kind ?? 'FINANCIAMENTO';
+    const kind = f.kind ?? 'FINANCIAMENTO';
     const kindLabel = kind === 'EMPRESTIMO' ? 'Empréstimo' : 'Financiamento';
 
     for (const inst of f.installments) {
-      if (inst.status !== ExpenseStatus.PREVISTO) continue;
       const description = `${kindLabel}: ${f.name} · Parcela ${inst.number}/${f.installmentsCount}`;
       const existing = await this.prisma.expense.findFirst({
         where: { financingInstallmentId: inst.id } as never,
       });
       if (existing) {
+        const dueInst = new Date(inst.dueDate).getTime();
+        const patch: {
+          amount?: unknown;
+          competenceDate?: Date;
+          dueDate?: Date;
+          description?: string;
+          status?: ExpenseStatus;
+          paidAt?: Date | null;
+        } = {};
         if (
           Number(existing.amount) !== Number(inst.payment) ||
-          existing.dueDate.getTime() !== new Date(inst.dueDate).getTime()
+          existing.dueDate.getTime() !== dueInst
         ) {
+          patch.amount = inst.payment;
+          patch.competenceDate = inst.dueDate;
+          patch.dueDate = inst.dueDate;
+        }
+        if (existing.description !== description) {
+          patch.description = description;
+        }
+        if (inst.status === ExpenseStatus.PAGO) {
+          if (existing.status !== ExpenseStatus.PAGO) {
+            patch.status = ExpenseStatus.PAGO;
+            patch.paidAt = inst.paidAt ?? inst.dueDate;
+          }
+        }
+        if (Object.keys(patch).length > 0) {
           await this.prisma.expense.update({
             where: { id: existing.id },
-            data: {
-              amount: inst.payment,
-              competenceDate: inst.dueDate,
-              dueDate: inst.dueDate,
-              description,
-            },
+            data: patch as never,
           });
         }
         continue;
       }
-      await this.prisma.expense.create({
-        data: {
-          financialEntityId: f.financialEntityId,
-          description,
-          type: ExpenseType.ESPORADICA,
-          categoryId,
-          amount: inst.payment,
-          competenceDate: inst.dueDate,
-          dueDate: inst.dueDate,
-          status: ExpenseStatus.PREVISTO,
-          paymentMethod: PaymentMethod.TRANSFERENCIA,
-          financingInstallmentId: inst.id,
-          mandatory: true,
-          notes: `Lançamento automático (${kindLabel.toLowerCase()}).`,
-        } as never,
-      });
+
+      const linked = await this.tryLinkOrphanExpenseToInstallment(
+        { name: f.name, financialEntityId: entityId },
+        inst,
+      );
+      if (linked) continue;
+
+      if (inst.status === ExpenseStatus.PREVISTO || inst.status === ExpenseStatus.ATRASADO) {
+        await this.prisma.expense.create({
+          data: {
+            financialEntityId: entityId,
+            description,
+            type: ExpenseType.ESPORADICA,
+            categoryId,
+            amount: inst.payment,
+            competenceDate: inst.dueDate,
+            dueDate: inst.dueDate,
+            status: inst.status,
+            paymentMethod: PaymentMethod.TRANSFERENCIA,
+            financingInstallmentId: inst.id,
+            mandatory: true,
+            notes: `Lançamento automático (${kindLabel.toLowerCase()}).`,
+          } as never,
+        });
+        continue;
+      }
+
+      if (inst.status === ExpenseStatus.PAGO) {
+        await this.prisma.expense.create({
+          data: {
+            financialEntityId: entityId,
+            description,
+            type: ExpenseType.ESPORADICA,
+            categoryId,
+            amount: inst.payment,
+            competenceDate: inst.dueDate,
+            dueDate: inst.dueDate,
+            paidAt: inst.paidAt ?? inst.dueDate,
+            status: ExpenseStatus.PAGO,
+            paymentMethod: PaymentMethod.TRANSFERENCIA,
+            financingInstallmentId: inst.id,
+            mandatory: true,
+            notes: `Lançamento automático (${kindLabel.toLowerCase()}).`,
+          } as never,
+        });
+      }
     }
+  }
+
+  /** Sincroniza despesas de parcelas para todos os contratos com entidade financeira (útil após deploy / backfill). */
+  async syncAllWithFinancialEntity(): Promise<number> {
+    const rows = await this.prisma.financing.findMany({
+      where: { financialEntityId: { not: null } },
+      select: { id: true },
+    });
+    for (const r of rows) {
+      await this.syncExpensesForFinancing(r.id);
+    }
+    return rows.length;
   }
 
   private async applyInstallmentPaid(
