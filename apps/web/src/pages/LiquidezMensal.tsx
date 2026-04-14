@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '@/lib/api';
+import { LEX_MOVIMENTS_CHANGED } from '@/lib/moviments-events';
 import { brl, formatDateBr } from '@/lib/format';
 import { usePreferences } from '@/lib/preferences';
 import { cn } from '@/lib/utils';
@@ -248,6 +249,22 @@ export default function LiquidezMensal() {
     void loadLines();
   }, [loadLines]);
 
+  useEffect(() => {
+    const onMovimentsChanged = () => {
+      void loadSummary();
+      void loadLines();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') onMovimentsChanged();
+    };
+    window.addEventListener(LEX_MOVIMENTS_CHANGED, onMovimentsChanged);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener(LEX_MOVIMENTS_CHANGED, onMovimentsChanged);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [loadSummary, loadLines]);
+
   const refreshAll = useCallback(async () => {
     await loadSummary();
     await loadLines();
@@ -404,10 +421,12 @@ export default function LiquidezMensal() {
       <div>
         <h1 className="text-2xl font-semibold">Sobra livre no mês</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Receitas e despesas na mesma base da DRE (competência). Inclui parcelas de{' '}
+          Receitas e despesas na mesma base da DRE (competência).           Inclui parcelas de{' '}
           <strong>financiamento/empréstimo</strong> geradas pela app, rendimentos CDB como receitas e aportes mensais
           configurados no cadastro CDB como despesas automáticas (categoria Aportes CDB), além de despesas com
-          &quot;cdb&quot; no texto. Clique nos valores da tabela para ver e editar os lançamentos.
+          &quot;cdb&quot; no texto. Clique nos valores da tabela para ver e editar os lançamentos. Os totais e a
+          <strong> sobra livre</strong> por mês atualizam-se automaticamente quando altera receitas, despesas, CDB ou
+          sincroniza contratos (voltar a este separador ou a outro ecrã de movimentos também recarrega os dados).
           Cadastro CDB:{' '}
           <Link to="/cdb" className="font-medium text-primary underline-offset-4 hover:underline">
             CDB / CDI

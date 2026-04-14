@@ -13,6 +13,7 @@ import {
   YAxis,
 } from 'recharts';
 import api from '@/lib/api';
+import { LEX_MOVIMENTS_CHANGED } from '@/lib/moviments-events';
 import { brl } from '@/lib/format';
 import { usePreferences } from '@/lib/preferences';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -99,6 +100,22 @@ export default function Dashboard() {
     setS(null);
     const q = entityFilterId ? `?financialEntityId=${encodeURIComponent(entityFilterId)}` : '';
     api.get<Summary>(`/dashboard/summary${q}`).then((r) => setS(r.data));
+  }, [entityFilterId]);
+
+  useEffect(() => {
+    const q = entityFilterId ? `?financialEntityId=${encodeURIComponent(entityFilterId)}` : '';
+    const reload = () => {
+      api.get<Summary>(`/dashboard/summary${q}`).then((r) => setS(r.data));
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') reload();
+    };
+    window.addEventListener(LEX_MOVIMENTS_CHANGED, reload);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener(LEX_MOVIMENTS_CHANGED, reload);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [entityFilterId]);
 
   useEffect(() => {

@@ -4,6 +4,7 @@ import {
   flushOutbox,
   type LexAxiosConfig,
 } from '@/lib/offline-queue';
+import { liquidityRelatedMutationUrl, notifyMovimentsChanged } from '@/lib/moviments-events';
 
 const api = axios.create({
   baseURL: '/api',
@@ -23,7 +24,14 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (r) => r,
+  (r) => {
+    const method = (r.config.method ?? 'get').toUpperCase();
+    const url = r.config.url ?? '';
+    if (MUTATING.has(method) && liquidityRelatedMutationUrl(url)) {
+      notifyMovimentsChanged();
+    }
+    return r;
+  },
   async (err: unknown) => {
     const orig = axios.isAxiosError(err) ? err.config : undefined;
     if (!orig) return Promise.reject(err);
