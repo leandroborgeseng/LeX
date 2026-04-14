@@ -53,14 +53,11 @@ export class LexBootstrapDiagnosticsService implements OnModuleInit {
 
     try {
       const cdbNeedingSync = await this.prisma.cdbApplication.count({
-        where: {
-          financialEntityId: { not: null },
-          OR: [{ monthlyAporteAmount: { gt: 0 } }, { recurrenceEnabled: true }],
-        },
+        where: { financialEntityId: { not: null } },
       });
       if (cdbNeedingSync > 0) {
         this.logger.log(
-          `CDB: a sincronizar receitas e aportes para ${cdbNeedingSync} aplicação(ões) (entidade e recorrência ou aporte > 0).`,
+          `CDB: a sincronizar receitas, aportes mensais e despesa de capital inicial para ${cdbNeedingSync} aplicação(ões) com entidade.`,
         );
         const n = await this.cdbApplications.syncAllWithFinancialEntity();
         this.logger.log(`CDB materializados: ${n}.`);

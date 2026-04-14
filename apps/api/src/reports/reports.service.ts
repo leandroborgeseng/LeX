@@ -168,6 +168,7 @@ export class ReportsService {
     for (const c of cdbs) {
       await this.cdbApplications.syncRevenuesForCdbApplication(c.id);
       await this.cdbApplications.syncAporteExpensesForCdbApplication(c.id);
+      await this.cdbApplications.syncInitialPrincipalExpenseForCdbApplication(c.id);
     }
     for (const f of fins) {
       await this.financings.syncExpensesForFinancing(f.id);

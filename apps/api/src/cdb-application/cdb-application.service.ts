@@ -15,6 +15,8 @@ import { monthlyCdbAccrualSchedule, projectCdbPortfolio } from './cdb-math.util'
 const CDB_REVENUE_CATEGORY = 'Rendimentos CDB';
 const CDB_APORTE_CATEGORY = 'Aportes CDB';
 const CDB_APORTE_NOTES = 'Lançamento automático (CDB aporte mensal).';
+/** Despesa única do capital aplicado no CDB (competência = data de aplicação). */
+const CDB_INITIAL_PRINCIPAL_NOTES = 'Lançamento automático (CDB aplicação inicial de principal).';
 
 @Injectable()
 export class CdbApplicationService {
@@ -61,14 +63,77 @@ export class CdbApplicationService {
     return c.id;
   }
 
-  /** Remove despesas PREVISTO geradas para esta aplicação CDB (só este fluxo usa `cdbApplicationId` em despesa). */
+  /**
+   * Remove só despesas PREVISTO de **aporte mensal** (cdbAporteYear/mês preenchidos).
+   * Não remove a despesa de **aplicação inicial de principal** (cdbAporteYear e cdbAporteMonth nulos).
+   */
   private async removePrevistoCdbLinkedAporteExpenses(cdbApplicationId: string) {
     await this.prisma.expense.deleteMany({
       where: {
         cdbApplicationId,
         status: ExpenseStatus.PREVISTO,
+        cdbAporteYear: { not: null },
       },
     });
+  }
+
+  /**
+   * Despesa PREVISTO única = principal aplicado na data de aplicação (saída de caixa na liquidez / gráfico).
+   * Não altera linhas já PAGAS.
+   */
+  async syncInitialPrincipalExpenseForCdbApplication(id: string) {
+    const row = await this.findOne(id);
+    const entityId = row.financialEntityId;
+    const principal = Number(row.principal ?? 0);
+    const existing = await this.prisma.expense.findFirst({
+      where: { cdbApplicationId: id, notes: CDB_INITIAL_PRINCIPAL_NOTES },
+    });
+
+    if (!row.active || !entityId || principal <= 0) {
+      if (existing?.status === ExpenseStatus.PREVISTO) {
+        await this.prisma.expense.delete({ where: { id: existing.id } });
+      }
+      return this.findOne(id);
+    }
+
+    const categoryId = await this.resolveCdbAporteCategoryId();
+    const appDate = new Date(row.applicationDate);
+    const description = `CDB: ${row.name} · Aplicação inicial (principal)`;
+
+    if (existing) {
+      if (existing.status === ExpenseStatus.PAGO) {
+        return this.findOne(id);
+      }
+      await this.prisma.expense.update({
+        where: { id: existing.id },
+        data: {
+          financialEntityId: entityId,
+          amount: principal,
+          competenceDate: appDate,
+          dueDate: appDate,
+          description,
+          categoryId,
+        },
+      });
+      return this.findOne(id);
+    }
+
+    await this.prisma.expense.create({
+      data: {
+        financialEntityId: entityId,
+        description,
+        type: ExpenseType.ESPORADICA,
+        categoryId,
+        amount: principal,
+        competenceDate: appDate,
+        dueDate: appDate,
+        status: ExpenseStatus.PREVISTO,
+        paymentMethod: PaymentMethod.TRANSFERENCIA,
+        cdbApplicationId: id,
+        notes: CDB_INITIAL_PRINCIPAL_NOTES,
+      },
+    });
+    return this.findOne(id);
   }
 
   /**
@@ -209,15 +274,13 @@ export class CdbApplicationService {
    */
   async syncAllWithFinancialEntity(): Promise<number> {
     const rows = await this.prisma.cdbApplication.findMany({
-      where: {
-        financialEntityId: { not: null },
-        OR: [{ monthlyAporteAmount: { gt: 0 } }, { recurrenceEnabled: true }],
-      },
+      where: { financialEntityId: { not: null } },
       select: { id: true },
     });
     for (const r of rows) {
       await this.syncRevenuesForCdbApplication(r.id);
       await this.syncAporteExpensesForCdbApplication(r.id);
+      await this.syncInitialPrincipalExpenseForCdbApplication(r.id);
     }
     return rows.length;
   }
@@ -310,6 +373,7 @@ export class CdbApplicationService {
       await this.removePrevistoCdbLinkedRevenues(id);
     }
     await this.syncAporteExpensesForCdbApplication(id);
+    await this.syncInitialPrincipalExpenseForCdbApplication(id);
     return this.findOne(id);
   }
 

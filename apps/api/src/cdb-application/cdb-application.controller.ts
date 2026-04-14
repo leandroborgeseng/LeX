@@ -40,6 +40,7 @@ export class CdbApplicationController {
   syncRevenues(@Param('id') id: string) {
     return this.svc
       .syncRevenuesForCdbApplication(id)
-      .then(() => this.svc.syncAporteExpensesForCdbApplication(id));
+      .then(() => this.svc.syncAporteExpensesForCdbApplication(id))
+      .then(() => this.svc.syncInitialPrincipalExpenseForCdbApplication(id));
   }
 }

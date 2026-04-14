@@ -28,6 +28,7 @@ function aporteMensalNum(r: AppRow): number {
 
 function CdbFluxoCaixaBadges({ r }: { r: AppRow }) {
   const aporte = aporteMensalNum(r);
+  const principalVal = parseFloat(String(r.principal)) || 0;
   const temEntidade = !!r.financialEntityId?.trim();
   const receitasDre = r.recurrenceEnabled && temEntidade;
 
@@ -54,6 +55,14 @@ function CdbFluxoCaixaBadges({ r }: { r: AppRow }) {
           title="Entidade definida: movimentos podem ser gerados na app."
         >
           Entidade OK
+        </span>
+      )}
+      {temEntidade && principalVal > 0 && (
+        <span
+          className="inline-flex rounded-md border border-teal-600/35 bg-teal-600/10 px-2 py-0.5 text-[11px] font-medium text-teal-950 dark:text-teal-100"
+          title="Despesa PREVISTO na data de aplicação = principal (saída de caixa na liquidez, mês da aplicação)."
+        >
+          Capital inicial {brl(principalVal)}
         </span>
       )}
       {temEntidade &&
@@ -472,8 +481,10 @@ export default function Cdb() {
           <strong>recorrência na DRE</strong>, o sistema gera receitas <strong>PREVISTO</strong> mês a mês (acréscimo
           patrimonial líquido estimado) na categoria Rendimentos CDB, alinhadas à mesma metodologia da projeção. Com{' '}
           <strong>aporte mensal</strong> (valor opcional), gera despesas <strong>PREVISTO</strong> na categoria Aportes CDB
-          — na liquidez mensal em “Desp. CDB”. O aporte <strong>não depende</strong> da recorrência de receitas: basta
-          entidade, valor maior que zero e aplicação ativa; ao gravar ou ao subir o servidor, os meses são sincronizados.
+          — na liquidez mensal em “Desp. CDB”. O <strong>principal</strong> na data de aplicação gera também uma
+          despesa única <strong>“Aplicação inicial (principal)”</strong> nesse mês (ex.: R$ 30.000 aplicados entram como
+          saída no gráfico). O aporte mensal <strong>não depende</strong> da recorrência de receitas: basta entidade,
+          valor maior que zero e aplicação ativa; ao gravar ou ao subir o servidor, os lançamentos são sincronizados.
         </p>
       </div>
 
