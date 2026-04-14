@@ -8,7 +8,8 @@ import {
   RevenueStatus,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { endOfMonth, startOfMonth } from '../common/utils/date.util';
+import { EMPTY_SCOPE_ENTITY_ID } from '../common/entity-filter';
+import { competenceUtcYearMonth1, endOfMonth, startOfMonth } from '../common/utils/date.util';
 
 export type EntityScope = 'PF' | 'PJ' | 'CONSOLIDADO';
 
@@ -24,7 +25,8 @@ export class ReportsService {
     const all = await this.prisma.financialEntity.findMany();
     if (scope === 'CONSOLIDADO') return undefined;
     const t = scope === 'PF' ? EntityType.PF : EntityType.PJ;
-    return all.filter((e) => e.type === t).map((e) => e.id);
+    const ids = all.filter((e) => e.type === t).map((e) => e.id);
+    return ids.length > 0 ? ids : [EMPTY_SCOPE_ENTITY_ID];
   }
 
   async cashflowMonthly(
@@ -40,14 +42,14 @@ export class ReportsService {
       this.prisma.revenue.findMany({
         where: {
           competenceDate: { gte: start, lte: end },
-          financialEntityId: ids ? { in: ids } : undefined,
+          ...(ids === undefined ? {} : { financialEntityId: { in: ids } }),
         },
         include: { payerSource: true, category: true, financialEntity: true },
       }),
       this.prisma.expense.findMany({
         where: {
           competenceDate: { gte: start, lte: end },
-          financialEntityId: ids ? { in: ids } : undefined,
+          ...(ids === undefined ? {} : { financialEntityId: { in: ids } }),
         },
         include: { category: true, originator: true, financialEntity: true },
       }),
@@ -65,16 +67,18 @@ export class ReportsService {
       this.prisma.revenue.aggregate({
         where: {
           competenceDate: { gte: start, lte: end },
-          status: { in: [RevenueStatus.RECEBIDO, RevenueStatus.PREVISTO] },
-          financialEntityId: ids ? { in: ids } : undefined,
+          status: {
+            in: [RevenueStatus.RECEBIDO, RevenueStatus.PREVISTO, RevenueStatus.ATRASADO],
+          },
+          ...(ids === undefined ? {} : { financialEntityId: { in: ids } }),
         },
         _sum: { netAmount: true, grossAmount: true, taxDiscount: true },
       }),
       this.prisma.expense.aggregate({
         where: {
           competenceDate: { gte: start, lte: end },
-          status: { in: [ExpenseStatus.PAGO, ExpenseStatus.PREVISTO] },
-          financialEntityId: ids ? { in: ids } : undefined,
+          status: { in: [ExpenseStatus.PAGO, ExpenseStatus.PREVISTO, ExpenseStatus.ATRASADO] },
+          ...(ids === undefined ? {} : { financialEntityId: { in: ids } }),
         },
         _sum: { amount: true },
       }),
@@ -141,7 +145,7 @@ export class ReportsService {
         despesas: sumE,
         resultado: sumR - sumE,
       },
-      nota: 'Receitas: PREVISTO + RECEBIDO. Despesas: PREVISTO + PAGO (competência em cada mês).',
+      nota: 'Receitas: PREVISTO + RECEBIDO + ATRASADO. Despesas: PREVISTO + PAGO + ATRASADO (competência em cada mês).',
     };
   }
 
@@ -230,7 +234,9 @@ export class ReportsService {
       this.prisma.revenue.findMany({
         where: {
           competenceDate: { gte: yearStart, lte: yearEnd },
-          status: { in: [RevenueStatus.RECEBIDO, RevenueStatus.PREVISTO] },
+          status: {
+            in: [RevenueStatus.RECEBIDO, RevenueStatus.PREVISTO, RevenueStatus.ATRASADO],
+          },
           ...entityWhere,
         },
         select: { competenceDate: true, netAmount: true, cdbApplicationId: true },
@@ -238,7 +244,7 @@ export class ReportsService {
       this.prisma.expense.findMany({
         where: {
           competenceDate: { gte: yearStart, lte: yearEnd },
-          status: { in: [ExpenseStatus.PAGO, ExpenseStatus.PREVISTO] },
+          status: { in: [ExpenseStatus.PAGO, ExpenseStatus.PREVISTO, ExpenseStatus.ATRASADO] },
           ...entityWhere,
         },
         select: {
@@ -259,17 +265,17 @@ export class ReportsService {
     const cdbExpByMonth = Array.from({ length: 12 }, () => 0);
 
     for (const r of revenues) {
-      const d = new Date(r.competenceDate);
-      if (d.getFullYear() !== year) continue;
-      const mi = d.getMonth();
+      const ym = competenceUtcYearMonth1(r.competenceDate);
+      if (!ym || ym.year !== year) continue;
+      const mi = ym.month1 - 1;
       const net = Number(r.netAmount);
       revByMonth[mi] += net;
       if (r.cdbApplicationId) revCdbByMonth[mi] += net;
     }
     for (const e of expenses) {
-      const d = new Date(e.competenceDate);
-      if (d.getFullYear() !== year) continue;
-      const mi = d.getMonth();
+      const ym = competenceUtcYearMonth1(e.competenceDate);
+      if (!ym || ym.year !== year) continue;
+      const mi = ym.month1 - 1;
       const amt = Number(e.amount);
       expByMonth[mi] += amt;
       const b = this.liquidityExpenseBucket(e);
@@ -341,7 +347,7 @@ export class ReportsService {
         sobraLivre: sumSobra,
       },
       nota:
-        'Receitas: PREVISTO + RECEBIDO. Rendimento CDB na app: receitas com vínculo à aplicação CDB. Despesas: PREVISTO + PAGO. Financiamento/empréstimo: despesas geradas pela app (parcela do contrato). Despesas CDB: demais despesas com “cdb” em descrição, categoria ou notas. Sobra livre = receitas − despesas.',
+        'Receitas: PREVISTO + RECEBIDO + ATRASADO. Rendimento CDB na app: receitas com vínculo à aplicação CDB. Despesas: PREVISTO + PAGO + ATRASADO. Financiamento/empréstimo: despesas geradas pela app (parcela do contrato). Despesas CDB: demais despesas com “cdb” em descrição, categoria ou notas. Sobra livre = receitas − despesas. Competências agrupadas pelo calendário UTC (YYYY-MM-DD).',
     };
   }
 
@@ -361,7 +367,9 @@ export class ReportsService {
     if (side === 'revenues') {
       const whereRev = {
         competenceDate: { gte: start, lte: end },
-        status: { in: [RevenueStatus.RECEBIDO, RevenueStatus.PREVISTO] as RevenueStatus[] },
+        status: {
+          in: [RevenueStatus.RECEBIDO, RevenueStatus.PREVISTO, RevenueStatus.ATRASADO],
+        },
         ...entityWhere,
         ...(segment === 'cdb' ? { cdbApplicationId: { not: null } } : {}),
       };
@@ -382,7 +390,7 @@ export class ReportsService {
     const rows = await this.prisma.expense.findMany({
       where: {
         competenceDate: { gte: start, lte: end },
-        status: { in: [ExpenseStatus.PAGO, ExpenseStatus.PREVISTO] },
+        status: { in: [ExpenseStatus.PAGO, ExpenseStatus.PREVISTO, ExpenseStatus.ATRASADO] },
         ...entityWhere,
       },
       orderBy: [{ competenceDate: 'asc' }, { id: 'asc' }],
@@ -419,7 +427,7 @@ export class ReportsService {
     const list = await this.prisma.expense.findMany({
       where: {
         competenceDate: { gte: new Date(from), lte: new Date(to) },
-        financialEntityId: ids ? { in: ids } : undefined,
+        ...(ids === undefined ? {} : { financialEntityId: { in: ids } }),
       },
       include: { category: true },
     });
@@ -440,7 +448,7 @@ export class ReportsService {
     const list = await this.prisma.expense.findMany({
       where: {
         competenceDate: { gte: new Date(from), lte: new Date(to) },
-        financialEntityId: ids ? { in: ids } : undefined,
+        ...(ids === undefined ? {} : { financialEntityId: { in: ids } }),
       },
       include: { originator: true },
     });
@@ -461,7 +469,7 @@ export class ReportsService {
     const list = await this.prisma.revenue.findMany({
       where: {
         competenceDate: { gte: new Date(from), lte: new Date(to) },
-        financialEntityId: ids ? { in: ids } : undefined,
+        ...(ids === undefined ? {} : { financialEntityId: { in: ids } }),
       },
       include: { payerSource: true },
     });

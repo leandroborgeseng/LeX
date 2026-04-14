@@ -7,6 +7,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { BalanceService } from '../ledger/balance.service';
+import { financialEntityInFilter } from '../common/entity-filter';
 import { endOfMonth, startOfMonth } from '../common/utils/date.util';
 
 @Injectable()
@@ -82,19 +83,19 @@ export class DashboardService {
 
       const [revPf, revPj, expPfAgg, expPjAgg] = await Promise.all([
         this.prisma.revenue.aggregate({
-          where: { ...revWhere, financialEntityId: { in: pfIds } },
+          where: { ...revWhere, ...financialEntityInFilter(pfIds) },
           _sum: { netAmount: true },
         }),
         this.prisma.revenue.aggregate({
-          where: { ...revWhere, financialEntityId: { in: pjIds } },
+          where: { ...revWhere, ...financialEntityInFilter(pjIds) },
           _sum: { netAmount: true },
         }),
         this.prisma.expense.aggregate({
-          where: { ...expWhere, financialEntityId: { in: pfIds } },
+          where: { ...expWhere, ...financialEntityInFilter(pfIds) },
           _sum: { amount: true },
         }),
         this.prisma.expense.aggregate({
-          where: { ...expWhere, financialEntityId: { in: pjIds } },
+          where: { ...expWhere, ...financialEntityInFilter(pjIds) },
           _sum: { amount: true },
         }),
       ]);
@@ -147,19 +148,19 @@ export class DashboardService {
 
       const [revYrPf, revYrPj, expYrPf, expYrPj] = await Promise.all([
         this.prisma.revenue.aggregate({
-          where: { ...revYearWhere, financialEntityId: { in: pfIds } },
+          where: { ...revYearWhere, ...financialEntityInFilter(pfIds) },
           _sum: { netAmount: true },
         }),
         this.prisma.revenue.aggregate({
-          where: { ...revYearWhere, financialEntityId: { in: pjIds } },
+          where: { ...revYearWhere, ...financialEntityInFilter(pjIds) },
           _sum: { netAmount: true },
         }),
         this.prisma.expense.aggregate({
-          where: { ...expYearWhere, financialEntityId: { in: pfIds } },
+          where: { ...expYearWhere, ...financialEntityInFilter(pfIds) },
           _sum: { amount: true },
         }),
         this.prisma.expense.aggregate({
-          where: { ...expYearWhere, financialEntityId: { in: pjIds } },
+          where: { ...expYearWhere, ...financialEntityInFilter(pjIds) },
           _sum: { amount: true },
         }),
       ]);

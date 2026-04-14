@@ -238,8 +238,8 @@ export default function Relatorios() {
           <CardHeader>
             <CardTitle className="text-base">DRE — totais do ano {year}</CardTitle>
             <p className="text-xs text-muted-foreground">
-              Mesmas regras da DRE simplificada: receitas em PREVISTO + RECEBIDO; despesas em PREVISTO + PAGO (por
-              competência em cada mês).
+              Mesmas regras da DRE simplificada: receitas em PREVISTO + RECEBIDO + ATRASADO; despesas em PREVISTO +
+              PAGO + ATRASADO (por competência em cada mês).
             </p>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
