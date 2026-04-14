@@ -187,6 +187,9 @@ export default function LiquidezMensal() {
   const [editingExp, setEditingExp] = useState<ExpenseRow | null>(null);
   const [editingRev, setEditingRev] = useState<RevenueRow | null>(null);
 
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState('');
+
   const query = useMemo(() => {
     const p = new URLSearchParams();
     p.set('year', String(year));
@@ -249,6 +252,29 @@ export default function LiquidezMensal() {
     await loadSummary();
     await loadLines();
   }, [loadSummary, loadLines]);
+
+  const syncMoviments = useCallback(async () => {
+    setSyncMsg('');
+    setSyncing(true);
+    try {
+      const p = new URLSearchParams();
+      p.set('scope', scope);
+      if (entityFilterId) p.set('financialEntityId', entityFilterId);
+      const r = await api.post<{ synced: { cdbApplications: number; financings: number } }>(
+        `/reports/sync-liquidity-moviments?${p.toString()}`,
+      );
+      const { cdbApplications, financings } = r.data.synced;
+      setSyncMsg(
+        `Atualizado: ${cdbApplications} aplicação(ões) CDB e ${financings} contrato(s) de financiamento/empréstimo. Os totais abaixo foram recalculados.`,
+      );
+      await loadSummary();
+      await loadLines();
+    } catch {
+      setSyncMsg('Não foi possível atualizar. Verifique a sessão e tente de novo.');
+    } finally {
+      setSyncing(false);
+    }
+  }, [scope, entityFilterId, loadSummary, loadLines]);
 
   const chartData =
     data?.months.map((m) => ({
@@ -423,7 +449,33 @@ export default function LiquidezMensal() {
             onChange={(e) => setYear(parseInt(e.target.value, 10) || currentY)}
           />
         </div>
+        <div className="flex min-w-[12rem] flex-col justify-end gap-2">
+          <Label className="sr-only">Sincronizar</Label>
+          <Button
+            type="button"
+            className="touch-manipulation"
+            disabled={syncing}
+            onClick={() => void syncMoviments()}
+          >
+            {syncing ? 'A atualizar…' : 'Atualizar CDB e contratos'}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Gera de novo as receitas estimadas do CDB (com recorrência ativa) e as despesas das parcelas dos
+            financiamentos, para o mesmo filtro de entidade desta página.
+          </p>
+        </div>
       </div>
+
+      {syncMsg && (
+        <p
+          className={cn(
+            'rounded-md border px-3 py-2 text-sm',
+            syncMsg.startsWith('Atualizado') ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-orange-200 bg-orange-50 text-orange-900',
+          )}
+        >
+          {syncMsg}
+        </p>
+      )}
 
       {data?.nota && <p className="text-xs text-muted-foreground">{data.nota}</p>}
 

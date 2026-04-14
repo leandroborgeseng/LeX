@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { CdbApplicationService } from '../cdb-application/cdb-application.service';
+import { FinancingService } from '../financing/financing.service';
 import {
   ContractStatus,
   EntityType,
@@ -12,7 +14,11 @@ export type EntityScope = 'PF' | 'PJ' | 'CONSOLIDADO';
 
 @Injectable()
 export class ReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cdbApplications: CdbApplicationService,
+    private readonly financings: FinancingService,
+  ) {}
 
   private async entityIds(scope: EntityScope): Promise<string[] | undefined> {
     const all = await this.prisma.financialEntity.findMany();
@@ -136,6 +142,37 @@ export class ReportsService {
         resultado: sumR - sumE,
       },
       nota: 'Receitas: PREVISTO + RECEBIDO. Despesas: PREVISTO + PAGO (competência em cada mês).',
+    };
+  }
+
+  /**
+   * Reexecuta sync de receitas (CDB com recorrência) e de despesas (parcelas de financiamento),
+   * para os mesmos critérios de entidade da liquidez mensal.
+   */
+  async syncLiquidityMoviments(scope: EntityScope, financialEntityId?: string) {
+    const entityWhere = await this.liquidityEntityWhere(scope, financialEntityId);
+    const cdbWhere: { financialEntityId?: string | { in: string[] } } = {};
+    const finWhere: { financialEntityId?: string | { in: string[] } } = {};
+    if (entityWhere.financialEntityId !== undefined) {
+      cdbWhere.financialEntityId = entityWhere.financialEntityId;
+      finWhere.financialEntityId = entityWhere.financialEntityId;
+    }
+
+    const cdbs = await this.prisma.cdbApplication.findMany({ where: cdbWhere });
+    const fins = await this.prisma.financing.findMany({ where: finWhere });
+
+    for (const c of cdbs) {
+      await this.cdbApplications.syncRevenuesForCdbApplication(c.id);
+    }
+    for (const f of fins) {
+      await this.financings.syncExpensesForFinancing(f.id);
+    }
+
+    return {
+      synced: {
+        cdbApplications: cdbs.length,
+        financings: fins.length,
+      },
     };
   }
 

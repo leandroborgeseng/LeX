@@ -1,4 +1,12 @@
-import { BadRequestException, Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ReportsService, EntityScope } from './reports.service';
@@ -61,6 +69,19 @@ export class ReportsController {
    * Lançamentos do mês (receitas ou despesas) na mesma base da liquidez mensal.
    * `segment`: receitas → all | cdb ; despesas → all | financing | cdb | other
    */
+  /**
+   * Re-materializa receitas CDB (sync por aplicação) e despesas de parcelas de financiamento/empréstimo,
+   * respeitando o mesmo filtro de entidade da liquidez mensal.
+   */
+  @Post('sync-liquidity-moviments')
+  @HttpCode(200)
+  syncLiquidityMoviments(
+    @Query('scope') scope: EntityScope = 'CONSOLIDADO',
+    @Query('financialEntityId') financialEntityId?: string,
+  ) {
+    return this.svc.syncLiquidityMoviments(scope, financialEntityId);
+  }
+
   @Get('monthly-liquidity-lines')
   monthlyLiquidityLines(
     @Query('scope') scope: EntityScope = 'CONSOLIDADO',
