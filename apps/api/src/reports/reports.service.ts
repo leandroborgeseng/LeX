@@ -139,15 +139,45 @@ export class ReportsService {
     };
   }
 
-  /** Despesas “CDB”: texto em descrição ou nome da categoria contém “cdb” (minúsculas). */
-  private isCdbExpense(description: string | null, categoryName: string | null): boolean {
-    const s = `${description ?? ''} ${categoryName ?? ''}`.toLowerCase();
-    return s.includes('cdb');
+  private async liquidityEntityWhere(
+    scope: EntityScope,
+    financialEntityId?: string,
+  ): Promise<{ financialEntityId?: string | { in: string[] } }> {
+    const fid = financialEntityId?.trim();
+    if (fid) return { financialEntityId: fid };
+    const ids = await this.entityIds(scope);
+    if (ids) return { financialEntityId: { in: ids } };
+    return {};
   }
 
   /**
-   * Liquidez mensal no ano: receitas e despesas (mesma regra da DRE por competência),
-   * subtotal de despesas ligadas a CDB (heurística por texto) e sobra livre (receitas − despesas).
+   * Despesas geradas pela app para financiamento/empréstimo têm `financingInstallmentId`.
+   * Despesas “CDB” (aportes manuais etc.): texto em descrição, categoria ou notas contém “cdb”.
+   */
+  private isCdbExpenseText(
+    description: string | null,
+    categoryName: string | null,
+    notes: string | null,
+  ): boolean {
+    const s = `${description ?? ''} ${categoryName ?? ''} ${notes ?? ''}`.toLowerCase();
+    return s.includes('cdb');
+  }
+
+  private liquidityExpenseBucket(e: {
+    financingInstallmentId: string | null;
+    description: string | null;
+    notes: string | null;
+    category: { name: string } | null;
+  }): 'financing' | 'cdb' | 'other' {
+    if (e.financingInstallmentId) return 'financing';
+    if (this.isCdbExpenseText(e.description, e.category?.name ?? null, e.notes)) return 'cdb';
+    return 'other';
+  }
+
+  /**
+   * Liquidez mensal no ano: receitas e despesas (DRE por competência),
+   * receitas estimadas do CDB (`cdbApplicationId`), despesas de contrato (`financingInstallmentId`),
+   * despesas CDB (texto), demais despesas e sobra livre.
    */
   async monthlyLiquidityYear(
     scope: EntityScope,
@@ -156,15 +186,8 @@ export class ReportsService {
   ) {
     const yearStart = startOfMonth(new Date(year, 0, 1));
     const yearEnd = endOfMonth(new Date(year, 11, 1));
-
-    const entityWhere: { financialEntityId?: string | { in: string[] } } = {};
-    const fid = financialEntityId?.trim();
-    if (fid) {
-      entityWhere.financialEntityId = fid;
-    } else {
-      const ids = await this.entityIds(scope);
-      if (ids) entityWhere.financialEntityId = { in: ids };
-    }
+    const entityWhere = await this.liquidityEntityWhere(scope, financialEntityId);
+    const fid = financialEntityId?.trim() ?? null;
 
     const [revenues, expenses] = await Promise.all([
       this.prisma.revenue.findMany({
@@ -173,7 +196,7 @@ export class ReportsService {
           status: { in: [RevenueStatus.RECEBIDO, RevenueStatus.PREVISTO] },
           ...entityWhere,
         },
-        select: { competenceDate: true, netAmount: true },
+        select: { competenceDate: true, netAmount: true, cdbApplicationId: true },
       }),
       this.prisma.expense.findMany({
         where: {
@@ -184,20 +207,27 @@ export class ReportsService {
         select: {
           competenceDate: true,
           amount: true,
+          financingInstallmentId: true,
           description: true,
+          notes: true,
           category: { select: { name: true } },
         },
       }),
     ]);
 
     const revByMonth = Array.from({ length: 12 }, () => 0);
+    const revCdbByMonth = Array.from({ length: 12 }, () => 0);
     const expByMonth = Array.from({ length: 12 }, () => 0);
+    const finExpByMonth = Array.from({ length: 12 }, () => 0);
     const cdbExpByMonth = Array.from({ length: 12 }, () => 0);
 
     for (const r of revenues) {
       const d = new Date(r.competenceDate);
       if (d.getFullYear() !== year) continue;
-      revByMonth[d.getMonth()] += Number(r.netAmount);
+      const mi = d.getMonth();
+      const net = Number(r.netAmount);
+      revByMonth[mi] += net;
+      if (r.cdbApplicationId) revCdbByMonth[mi] += net;
     }
     for (const e of expenses) {
       const d = new Date(e.competenceDate);
@@ -205,23 +235,27 @@ export class ReportsService {
       const mi = d.getMonth();
       const amt = Number(e.amount);
       expByMonth[mi] += amt;
-      if (this.isCdbExpense(e.description, e.category?.name ?? null)) {
-        cdbExpByMonth[mi] += amt;
-      }
+      const b = this.liquidityExpenseBucket(e);
+      if (b === 'financing') finExpByMonth[mi] += amt;
+      else if (b === 'cdb') cdbExpByMonth[mi] += amt;
     }
 
     const months: {
       month: number;
       monthKey: string;
       receitas: number;
+      receitasCdb: number;
       despesas: number;
+      despesasFinanciamento: number;
       despesasCdb: number;
       despesasOutras: number;
       sobraLivre: number;
     }[] = [];
 
     let sumR = 0;
+    let sumRc = 0;
     let sumE = 0;
+    let sumFin = 0;
     let sumCdb = 0;
     let sumOutras = 0;
     let sumSobra = 0;
@@ -229,12 +263,16 @@ export class ReportsService {
     for (let m = 1; m <= 12; m++) {
       const i = m - 1;
       const receitas = revByMonth[i];
+      const receitasCdb = revCdbByMonth[i];
       const despesas = expByMonth[i];
+      const despesasFinanciamento = finExpByMonth[i];
       const despesasCdb = cdbExpByMonth[i];
-      const despesasOutras = despesas - despesasCdb;
+      const despesasOutras = despesas - despesasFinanciamento - despesasCdb;
       const sobraLivre = receitas - despesas;
       sumR += receitas;
+      sumRc += receitasCdb;
       sumE += despesas;
+      sumFin += despesasFinanciamento;
       sumCdb += despesasCdb;
       sumOutras += despesasOutras;
       sumSobra += sobraLivre;
@@ -242,7 +280,9 @@ export class ReportsService {
         month: m,
         monthKey: `${year}-${String(m).padStart(2, '0')}`,
         receitas,
+        receitasCdb,
         despesas,
+        despesasFinanciamento,
         despesasCdb,
         despesasOutras,
         sobraLivre,
@@ -252,18 +292,85 @@ export class ReportsService {
     return {
       scope,
       year,
-      financialEntityId: fid ?? null,
+      financialEntityId: fid,
       months,
       totals: {
         receitas: sumR,
+        receitasCdb: sumRc,
         despesas: sumE,
+        despesasFinanciamento: sumFin,
         despesasCdb: sumCdb,
         despesasOutras: sumOutras,
         sobraLivre: sumSobra,
       },
       nota:
-        'Receitas: PREVISTO + RECEBIDO. Despesas: PREVISTO + PAGO (competência). Despesas CDB: descrição ou categoria contém "cdb". Sobra livre = receitas − despesas (inclui CDB e demais).',
+        'Receitas: PREVISTO + RECEBIDO. Rendimento CDB na app: receitas com vínculo à aplicação CDB. Despesas: PREVISTO + PAGO. Financiamento/empréstimo: despesas geradas pela app (parcela do contrato). Despesas CDB: demais despesas com “cdb” em descrição, categoria ou notas. Sobra livre = receitas − despesas.',
     };
+  }
+
+  /** Lançamentos do mês para detalhe na tela de liquidez (edição/exclusão na API de movimentos). */
+  async monthlyLiquidityLines(
+    scope: EntityScope,
+    year: number,
+    month: number,
+    financialEntityId: string | undefined,
+    side: 'revenues' | 'expenses',
+    segment: 'all' | 'cdb' | 'financing' | 'other',
+  ) {
+    const entityWhere = await this.liquidityEntityWhere(scope, financialEntityId);
+    const start = startOfMonth(new Date(year, month - 1, 1));
+    const end = endOfMonth(start);
+
+    if (side === 'revenues') {
+      const whereRev = {
+        competenceDate: { gte: start, lte: end },
+        status: { in: [RevenueStatus.RECEBIDO, RevenueStatus.PREVISTO] as RevenueStatus[] },
+        ...entityWhere,
+        ...(segment === 'cdb' ? { cdbApplicationId: { not: null } } : {}),
+      };
+      const rows = await this.prisma.revenue.findMany({
+        where: whereRev,
+        orderBy: [{ competenceDate: 'asc' }, { id: 'asc' }],
+        include: {
+          category: true,
+          payerSource: true,
+          financialEntity: { select: { id: true, name: true } },
+          destinationAccount: true,
+          cdbApplication: { select: { id: true, name: true } },
+        },
+      });
+      return { scope, year, month, side, segment, rows };
+    }
+
+    const rows = await this.prisma.expense.findMany({
+      where: {
+        competenceDate: { gte: start, lte: end },
+        status: { in: [ExpenseStatus.PAGO, ExpenseStatus.PREVISTO] },
+        ...entityWhere,
+      },
+      orderBy: [{ competenceDate: 'asc' }, { id: 'asc' }],
+      include: {
+        category: true,
+        originator: true,
+        financialEntity: { select: { id: true, name: true } },
+        bankAccount: true,
+        creditCard: true,
+        financingInstallment: {
+          select: {
+            id: true,
+            number: true,
+            financing: { select: { id: true, name: true, kind: true } },
+          },
+        },
+      },
+    });
+
+    const filtered =
+      segment === 'all'
+        ? rows
+        : rows.filter((e) => this.liquidityExpenseBucket(e) === segment);
+
+    return { scope, year, month, side, segment, rows: filtered };
   }
 
   async expensesByCategory(

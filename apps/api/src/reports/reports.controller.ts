@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ReportsService, EntityScope } from './reports.service';
@@ -54,6 +54,45 @@ export class ReportsController {
       scope,
       Number.isFinite(y) ? y : new Date().getFullYear(),
       financialEntityId,
+    );
+  }
+
+  /**
+   * Lançamentos do mês (receitas ou despesas) na mesma base da liquidez mensal.
+   * `segment`: receitas → all | cdb ; despesas → all | financing | cdb | other
+   */
+  @Get('monthly-liquidity-lines')
+  monthlyLiquidityLines(
+    @Query('scope') scope: EntityScope = 'CONSOLIDADO',
+    @Query('year') year = `${new Date().getFullYear()}`,
+    @Query('month') month = `${new Date().getMonth() + 1}`,
+    @Query('side') side: string,
+    @Query('segment') segment = 'all',
+    @Query('financialEntityId') financialEntityId?: string,
+  ) {
+    if (side !== 'revenues' && side !== 'expenses') {
+      throw new BadRequestException('Parâmetro side deve ser revenues ou expenses');
+    }
+    const y = parseInt(year, 10);
+    const m = parseInt(month, 10);
+    const yOk = Number.isFinite(y) ? y : new Date().getFullYear();
+    const mOk = Number.isFinite(m) && m >= 1 && m <= 12 ? m : new Date().getMonth() + 1;
+    if (side === 'revenues') {
+      if (segment !== 'all' && segment !== 'cdb') {
+        throw new BadRequestException('Para receitas, segment deve ser all ou cdb');
+      }
+    } else {
+      if (!['all', 'financing', 'cdb', 'other'].includes(segment)) {
+        throw new BadRequestException('Para despesas, segment deve ser all, financing, cdb ou other');
+      }
+    }
+    return this.svc.monthlyLiquidityLines(
+      scope,
+      yOk,
+      mOk,
+      financialEntityId,
+      side as 'revenues' | 'expenses',
+      segment as 'all' | 'cdb' | 'financing' | 'other',
     );
   }
 
